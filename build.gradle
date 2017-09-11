@@ -3,7 +3,7 @@ buildscript {
         mavenCentral()
         maven {
             name = "forge"
-            url = "http://files.minecraftforge.net/maven"
+            url = "http://files.minecraftforge.net/maven/"
         }
         maven {
             name = "sonatype"
@@ -11,7 +11,7 @@ buildscript {
         }
     }
     dependencies {
-		classpath 'net.minecraftforge.gradle:ForgeGradle:2.2-SNAPSHOT'//files('SForgeGradle-2.2-SNAPSHOT.jar')//'net.minecraftforge.gradle:ForgeGradle:2.2-SNAPSHOT'
+		classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'//files('SForgeGradle-2.2-SNAPSHOT.jar')//'net.minecraftforge.gradle:ForgeGradle:2.2-SNAPSHOT'
 		//classpath files('FG.jar')
 	}
 }
@@ -21,7 +21,7 @@ apply plugin: 'net.minecraftforge.gradle.patcher'
 apply plugin: 'net.minecraftforge.gradle.launch4j'
 
 group = 'fewizz.svarka'
-version = '0.0.2'
+version = '0.0.3'
 
 //afterEvaluate {
 //	patchSvarkaJar.addInject file('bukkit/src/main/java/')
@@ -34,11 +34,11 @@ version = '0.0.2'
 //}
 
 dependencies {
-	compile 'commons-lang:commons-lang:2.6'
+	compile 'org.apache.commons:commons-lang3:3.5'
 	compile 'org.avaje:ebean:2.8.1'
 	compile 'com.googlecode.json-simple:json-simple:1.1'
 	compile 'org.yaml:snakeyaml:1.15'
-	compile 'com.google.guava:guava:17.0'
+	compile 'com.google.guava:guava:21.0'
 }
 
 tasks.withType(JavaCompile) {
@@ -46,10 +46,10 @@ tasks.withType(JavaCompile) {
 }
 
 minecraft {
-    version = "1.10.2"
-    mappings = 'snapshot_nodoc_20161111'
+    version = "1.12.1"
+    mappings = 'snapshot_nodoc_20170911'
     workspaceDir = "projects"
-    versionJson = "jsons/1.10.2-svarka-dev.json"
+    versionJson = "jsons/1.12.1-dev.json"
     buildUserdev = true
     buildInstaller = true
     installerVersion = '1.5'
@@ -138,12 +138,12 @@ outputJar {
     manifest.attributes([
         "Main-Class": "net.minecraftforge.fml.relauncher.ServerLaunchWrapper",
         "TweakClass": "net.minecraftforge.fml.common.launcher.FMLTweaker",
-        "Class-Path": getServerClasspath(file("jsons/1.10.2-svarka-rel.json"))
+        "Class-Path": getServerClasspath(file("jsons/1.12.1-rel.json"))
     ])
 }
 
 processJson {
-    releaseJson = "jsons/1.10.2-svarka-rel.json"
+    releaseJson = "jsons/1.12.1-rel.json"
     addReplacements([
         "@minecraft_version@": project.minecraft.version,
         "@version@": project.version,

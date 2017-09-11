@@ -8,7 +8,8 @@
   "welcome":"Welcome to the simple @project@ installer.",
   "minecraft":"@minecraft_version@",
   "mirrorList" : "http://files.minecraftforge.net/mirror-brand.list",
-  "logo":"/big_logo.png"
+  "logo":"/big_logo.png",
+  "modList":"none"
 },
 "versionInfo": {
   "id": "@minecraft_version@-@project@@version@",
@@ -17,8 +18,9 @@
   "type": "release",
   "minecraftArguments": "--username ${auth_player_name} --version ${version_name} --gameDir ${game_directory} --assetsDir ${assets_root} --assetIndex ${assets_index_name} --uuid ${auth_uuid} --accessToken ${auth_access_token} --userType ${user_type} --tweakClass net.minecraftforge.fml.common.launcher.FMLTweaker --versionType Forge",
   "mainClass": "net.minecraft.launchwrapper.Launch",
-  "inheritsFrom": "1.10.2",
-  "jar": "1.10.2",
+  "inheritsFrom": "1.12.1",
+  "jar": "1.12.1",
+  "logging": {},
   "libraries": [
     {
       "name": "@artifact@",
@@ -29,8 +31,11 @@
       "serverreq":true
     },
     {
-      "name": "org.ow2.asm:asm-all:5.0.3",
-      "serverreq":true
+      "name": "org.ow2.asm:asm-all:5.2",
+      "url" : "http://files.minecraftforge.net/maven/",
+      "checksums" : [ "2ea49e08b876bbd33e0a7ce75c8f371d29e1f10a" ],
+      "serverreq":true,
+      "clientreq":true
     },
     {
       "name": "jline:jline:2.13",
@@ -116,36 +121,12 @@
       "serverreq":true,
       "clientreq":true
     },
-	{
-	  "name" : "commons-lang:commons-lang:2.6",
-	  "serverreq":true,
-      "clientreq":true,
-	  "url" : "http://repo.maven.apache.org/maven2"
-	},
-	{
-	  "name" : "org.avaje:ebean:2.8.1",
-	  "serverreq":true,
-      "clientreq":true,
-	  "url" : "http://repo.maven.apache.org/maven2"
-	},
-	{
-	  "name" : "com.googlecode.json-simple:json-simple:1.1",
-	  "serverreq":true,
-      "clientreq":true,
-	  "url" : "http://repo.maven.apache.org/maven2"
-	},
-	{
-	  "name" : "org.yaml:snakeyaml:1.15",
-	  "serverreq":true,
-      "clientreq":true,
-	  "url" : "http://repo.maven.apache.org/maven2"
-	},
     {
       "name": "lzma:lzma:0.0.1",
       "serverreq":true
     },
     {
-      "name": "net.sf.jopt-simple:jopt-simple:4.6",
+      "name": "net.sf.jopt-simple:jopt-simple:5.0.3",
       "serverreq":true
     },
     {
@@ -159,5 +140,18 @@
       "serverreq":true
     }
   ]
-}
+},
+"optionals": [
+    {
+        "name": "Mercurius",
+        "client": true,
+        "server": true,
+        "default": true,
+        "inject": true,
+        "desc": "A mod that collects statistics about Minecraft and your system.<br>Useful for Forge to understand how Minecraft/Forge are used.",
+        "url": "http://www.minecraftforge.net/forum/index.php?topic=43278.0",
+        "artifact": "net.minecraftforge:MercuriusUpdater:1.12.1",
+        "maven": "http://files.minecraftforge.net/maven/"
+    }
+]
 }
