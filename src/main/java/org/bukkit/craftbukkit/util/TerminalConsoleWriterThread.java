@@ -1,58 +1,52 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.util;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.fusesource.jansi.Ansi;
-import org.bukkit.craftbukkit.Main;
-import com.mojang.util.QueueLogAppender;
-
 import jline.console.ConsoleReader;
+import com.mojang.util.QueueLogAppender;
+import org.bukkit.craftbukkit.Main;
+import org.fusesource.jansi.Ansi;
+import org.fusesource.jansi.Ansi.Erase;
 
-import java.io.OutputStream;
-//import org.bukkit.craftbukkit.libs.jline.console.ConsoleReader;
+public class TerminalConsoleWriterThread implements Runnable {
+    final private ConsoleReader reader;
+    final private OutputStream output;
 
-public class TerminalConsoleWriterThread implements Runnable
-{
-    private final ConsoleReader reader;
-    private final OutputStream output;
-    
-    public TerminalConsoleWriterThread(final OutputStream output, final ConsoleReader reader) {
+    public TerminalConsoleWriterThread(OutputStream output, ConsoleReader reader) {
         this.output = output;
         this.reader = reader;
     }
-    
-    @Override
+
     public void run() {
+        String message;
+
+        // Using name from log4j config in vanilla jar
         while (true) {
-            final String message = QueueLogAppender.getNextLogEvent("TerminalConsole");
+            message = QueueLogAppender.getNextLogEvent("TerminalConsole");
             if (message == null) {
                 continue;
             }
+
             try {
                 if (Main.useJline) {
-                    this.reader.print(String.valueOf(Ansi.ansi().eraseLine(Ansi.Erase.ALL).toString()) + '\r');
-                    this.reader.flush();
-                    this.output.write(message.getBytes());
-                    this.output.flush();
+                    reader.print(Ansi.ansi().eraseLine(Erase.ALL).toString() + ConsoleReader.RESET_LINE);
+                    reader.flush();
+                    output.write(message.getBytes());
+                    output.flush();
+
                     try {
-                        this.reader.drawLine();
+                        reader.drawLine();
+                    } catch (Throwable ex) {
+                        reader.getCursorBuffer().clear();
                     }
-                    catch (Throwable t) {
-                        this.reader.getCursorBuffer().clear();
-                    }
-                    this.reader.flush();
+                    reader.flush();
+                } else {
+                    output.write(message.getBytes());
+                    output.flush();
                 }
-                else {
-                    this.output.write(message.getBytes());
-                    this.output.flush();
-                }
-            }
-            catch (IOException ex) {
+            } catch (IOException ex) {
                 Logger.getLogger(TerminalConsoleWriterThread.class.getName()).log(Level.SEVERE, null, ex);
             }
         }

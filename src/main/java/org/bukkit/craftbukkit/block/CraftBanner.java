@@ -1,124 +1,105 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.block;
 
-import net.minecraft.tileentity.TileEntity;
-import java.util.Iterator;
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.nbt.NBTTagList;
-import java.util.Collection;
-import org.bukkit.Material;
-import net.minecraft.nbt.NBTTagCompound;
-import org.bukkit.block.banner.PatternType;
-import org.bukkit.craftbukkit.CraftWorld;
 import java.util.ArrayList;
+import java.util.List;
+import net.minecraft.server.EnumColor;
+import net.minecraft.server.NBTTagCompound;
+import net.minecraft.server.NBTTagList;
+import net.minecraft.server.TileEntityBanner;
+import org.bukkit.DyeColor;
+import org.bukkit.Material;
+import org.bukkit.block.Banner;
 import org.bukkit.block.Block;
 import org.bukkit.block.banner.Pattern;
-import java.util.List;
-import org.bukkit.DyeColor;
-import net.minecraft.tileentity.TileEntityBanner;
-import org.bukkit.block.Banner;
+import org.bukkit.block.banner.PatternType;
 
-public class CraftBanner extends CraftBlockState implements Banner
-{
-    private final TileEntityBanner banner;
+public class CraftBanner extends CraftBlockEntityState<TileEntityBanner> implements Banner {
+
     private DyeColor base;
     private List<Pattern> patterns;
-    
+
     public CraftBanner(final Block block) {
-        super(block);
-        this.patterns = new ArrayList<Pattern>();
-        final CraftWorld world = (CraftWorld)block.getWorld();
-        this.banner = (TileEntityBanner)world.getTileEntityAt(this.getX(), this.getY(), this.getZ());
-        this.base = DyeColor.getByDyeData((byte)this.banner.baseColor);
-        if (this.banner.patterns != null) {
-            for (int i = 0; i < this.banner.patterns.tagCount(); ++i) {
-                final NBTTagCompound p = this.banner.patterns.getCompoundTagAt(i);
-                this.patterns.add(new Pattern(DyeColor.getByDyeData((byte)p.getInteger("Color")), PatternType.getByIdentifier(p.getString("Pattern"))));
-            }
-        }
+        super(block, TileEntityBanner.class);
     }
-    
+
     public CraftBanner(final Material material, final TileEntityBanner te) {
-        super(material);
-        this.patterns = new ArrayList<Pattern>();
-        this.banner = te;
-        this.base = DyeColor.getByDyeData((byte)this.banner.baseColor);
-        if (this.banner.patterns != null) {
-            for (int i = 0; i < this.banner.patterns.tagCount(); ++i) {
-                final NBTTagCompound p = this.banner.patterns.getCompoundTagAt(i);
-                this.patterns.add(new Pattern(DyeColor.getByDyeData((byte)p.getInteger("Color")), PatternType.getByIdentifier(p.getString("Pattern"))));
+        super(material, te);
+    }
+
+    @Override
+    public void load(TileEntityBanner banner) {
+        super.load(banner);
+
+        base = DyeColor.getByDyeData((byte) banner.color.getInvColorIndex());
+        patterns = new ArrayList<Pattern>();
+
+        if (banner.patterns != null) {
+            for (int i = 0; i < banner.patterns.size(); i++) {
+                NBTTagCompound p = (NBTTagCompound) banner.patterns.get(i);
+                patterns.add(new Pattern(DyeColor.getByDyeData((byte) p.getInt("Color")), PatternType.getByIdentifier(p.getString("Pattern"))));
             }
         }
     }
-    
+
     @Override
     public DyeColor getBaseColor() {
         return this.base;
     }
-    
+
     @Override
-    public void setBaseColor(final DyeColor color) {
+    public void setBaseColor(DyeColor color) {
         this.base = color;
     }
-    
+
     @Override
     public List<Pattern> getPatterns() {
-        return new ArrayList<Pattern>(this.patterns);
+        return new ArrayList<Pattern>(patterns);
     }
-    
+
     @Override
-    public void setPatterns(final List<Pattern> patterns) {
+    public void setPatterns(List<Pattern> patterns) {
         this.patterns = new ArrayList<Pattern>(patterns);
     }
-    
+
     @Override
-    public void addPattern(final Pattern pattern) {
+    public void addPattern(Pattern pattern) {
         this.patterns.add(pattern);
     }
-    
+
     @Override
-    public Pattern getPattern(final int i) {
+    public Pattern getPattern(int i) {
         return this.patterns.get(i);
     }
-    
+
     @Override
-    public Pattern removePattern(final int i) {
+    public Pattern removePattern(int i) {
         return this.patterns.remove(i);
     }
-    
+
     @Override
-    public void setPattern(final int i, final Pattern pattern) {
+    public void setPattern(int i, Pattern pattern) {
         this.patterns.set(i, pattern);
     }
-    
+
     @Override
     public int numberOfPatterns() {
-        return this.patterns.size();
+        return patterns.size();
     }
-    
+
     @Override
-    public boolean update(final boolean force, final boolean applyPhysics) {
-        final boolean result = !this.isPlaced() || super.update(force, applyPhysics);
-        if (result) {
-            this.banner.baseColor = this.base.getDyeData();
-            final NBTTagList newPatterns = new NBTTagList();
-            for (final Pattern p : this.patterns) {
-                final NBTTagCompound compound = new NBTTagCompound();
-                compound.setInteger("Color", p.getColor().getDyeData());
-                compound.setString("Pattern", p.getPattern().getIdentifier());
-                newPatterns.appendTag(compound);
-            }
-            this.banner.patterns = newPatterns;
-            this.banner.markDirty();
+    public void applyTo(TileEntityBanner banner) {
+        super.applyTo(banner);
+
+        banner.color = EnumColor.fromInvColorIndex(base.getDyeData());
+
+        NBTTagList newPatterns = new NBTTagList();
+
+        for (Pattern p : patterns) {
+            NBTTagCompound compound = new NBTTagCompound();
+            compound.setInt("Color", p.getColor().getDyeData());
+            compound.setString("Pattern", p.getPattern().getIdentifier());
+            newPatterns.add(compound);
         }
-        return result;
-    }
-    
-    @Override
-    public TileEntityBanner getTileEntity() {
-        return this.banner;
+        banner.patterns = newPatterns;
     }
 }

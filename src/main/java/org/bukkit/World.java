@@ -13,8 +13,10 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.*;
 import org.bukkit.generator.BlockPopulator;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.material.MaterialData;
 import org.bukkit.metadata.Metadatable;
 import org.bukkit.plugin.messaging.PluginMessageRecipient;
+import org.bukkit.util.Consumer;
 import org.bukkit.util.Vector;
 
 /**
@@ -701,6 +703,40 @@ public interface World extends PluginMessageRecipient, Metadatable {
     public <T extends Entity> T spawn(Location location, Class<T> clazz) throws IllegalArgumentException;
 
     /**
+     * Spawn an entity of a specific class at the given {@link Location}, with
+     * the supplied function run before the entity is added to the world.
+     * <br>
+     * Note that when the function is run, the entity will not be actually in
+     * the world. Any operation involving such as teleporting the entity is undefined
+     * until after this function returns.
+     *
+     * @param location the {@link Location} to spawn the entity at
+     * @param clazz the class of the {@link Entity} to spawn
+     * @param function the function to be run before the entity is spawned.
+     * @param <T> the class of the {@link Entity} to spawn
+     * @return an instance of the spawned {@link Entity}
+     * @throws IllegalArgumentException if either parameter is null or the
+     *     {@link Entity} requested cannot be spawned
+     */
+    public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<T> function) throws IllegalArgumentException;
+
+    /**
+     * Spawn a {@link FallingBlock} entity at the given {@link Location} of
+     * the specified {@link Material}. The material dictates what is falling.
+     * When the FallingBlock hits the ground, it will place that block.
+     * <p>
+     * The Material must be a block type, check with {@link Material#isBlock()
+     * material.isBlock()}. The Material may not be air.
+     *
+     * @param location The {@link Location} to spawn the FallingBlock
+     * @param data The block data
+     * @return The spawned {@link FallingBlock} instance
+     * @throws IllegalArgumentException if {@link Location} or {@link
+     *     MaterialData} are null or {@link Material} of the {@link MaterialData} is not a block
+     */
+    public FallingBlock spawnFallingBlock(Location location, MaterialData data) throws IllegalArgumentException;
+
+    /**
      * Spawn a {@link FallingBlock} entity at the given {@link Location} of
      * the specified {@link Material}. The material dictates what is falling.
      * When the FallingBlock hits the ground, it will place that block.
@@ -1156,6 +1192,34 @@ public interface World extends PluginMessageRecipient, Metadatable {
     void playSound(Location location, String sound, float volume, float pitch);
 
     /**
+     * Play a Sound at the provided Location in the World.
+     * <p>
+     * This function will fail silently if Location or Sound are null.
+     *
+     * @param location The location to play the sound
+     * @param sound The sound to play
+     * @param category the category of the sound
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
+     */
+    void playSound(Location location, Sound sound, SoundCategory category, float volume, float pitch);
+
+    /**
+     * Play a Sound at the provided Location in the World.
+     * <p>
+     * This function will fail silently if Location or Sound are null. No sound
+     * will be heard by the players if their clients do not have the respective
+     * sound for the value passed.
+     *
+     * @param location the location to play the sound
+     * @param sound the internal sound name to play
+     * @param category the category of the sound
+     * @param volume the volume of the sound
+     * @param pitch the pitch of the sound
+     */
+    void playSound(Location location, String sound, SoundCategory category, float volume, float pitch);
+
+    /**
      * Get existing rules
      *
      * @return An array of rules
@@ -1411,8 +1475,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
         /**
          * Represents the "end" map
          */
-        THE_END(1),
-        CUSTOM(0xFF); // Svarka
+        THE_END(1);
 
         private final int id;
         private static final Map<Integer, Environment> lookup = new HashMap<Integer, Environment>();
@@ -1441,8 +1504,7 @@ public interface World extends PluginMessageRecipient, Metadatable {
          */
         @Deprecated
         public static Environment getEnvironment(int id) {
-        	Environment env = lookup.get(id);
-            return env == null ? CUSTOM : env;
+            return lookup.get(id);
         }
 
         static {

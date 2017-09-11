@@ -1,42 +1,33 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import org.bukkit.entity.EntityType;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.item.EntityXPOrb;
+import net.minecraft.server.EntityExperienceOrb;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ExperienceOrb;
 
-public class CraftExperienceOrb extends CraftEntity implements ExperienceOrb
-{
-    public CraftExperienceOrb(final CraftServer server, final EntityXPOrb entity) {
+public class CraftExperienceOrb extends CraftEntity implements ExperienceOrb {
+    public CraftExperienceOrb(CraftServer server, EntityExperienceOrb entity) {
         super(server, entity);
     }
-    
-    @Override
+
     public int getExperience() {
-        return this.getHandle().xpValue;
+        return getHandle().value;
     }
-    
+
+    public void setExperience(int value) {
+        getHandle().value = value;
+    }
+
     @Override
-    public void setExperience(final int value) {
-        this.getHandle().xpValue = value;
+    public EntityExperienceOrb getHandle() {
+        return (EntityExperienceOrb) entity;
     }
-    
-    @Override
-    public EntityXPOrb getHandle() {
-        return (EntityXPOrb)this.entity;
-    }
-    
+
     @Override
     public String toString() {
         return "CraftExperienceOrb";
     }
-    
-    @Override
+
     public EntityType getType() {
         return EntityType.EXPERIENCE_ORB;
     }

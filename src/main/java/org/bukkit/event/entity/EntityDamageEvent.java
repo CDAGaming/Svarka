@@ -29,11 +29,6 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
     private final DamageCause cause;
 
     @Deprecated
-    public EntityDamageEvent(final Entity damagee, final DamageCause cause, final int damage) {
-        this(damagee, cause, (double) damage);
-    }
-
-    @Deprecated
     public EntityDamageEvent(final Entity damagee, final DamageCause cause, final double damage) {
         this(damagee, cause, new EnumMap<DamageModifier, Double>(ImmutableMap.of(DamageModifier.BASE, damage)), new EnumMap<DamageModifier, Function<? super Double, Double>>(ImmutableMap.of(DamageModifier.BASE, ZERO)));
     }
@@ -151,18 +146,6 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * This method exists for legacy reasons to provide backwards
-     * compatibility. It will not exist at runtime and should not be used
-     * under any circumstances.
-     * 
-     * @return the (rounded) damage
-     */
-    @Deprecated
-    public int _INVALID_getDamage() {
-        return NumberConversions.ceil(getDamage());
-    }
-
-    /**
      * Sets the raw amount of damage caused by the event.
      * <p>
      * For compatibility this also recalculates the modifiers and scales
@@ -200,18 +183,6 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * This method exists for legacy reasons to provide backwards
-     * compatibility. It will not exist at runtime and should not be used
-     * under any circumstances.
-     * 
-     * @param damage the new damage value
-     */
-    @Deprecated
-    public void _INVALID_setDamage(int damage) {
-        setDamage(damage);
-    }
-
-    /**
      * Gets the cause of the damage.
      *
      * @return A DamageCause value detailing the cause of the damage.
@@ -231,7 +202,13 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
 
     /**
      * An enum to specify the types of modifier
+     *
+     * @deprecated This API is responsible for a large number of implementation
+     * problems and is in general unsustainable to maintain. It is likely to be
+     * removed very soon in a subsequent release. Please see
+     * https://www.spigotmc.org/threads/194446/ for more information.
      */
+    @Deprecated
     public enum DamageModifier {
         /**
          * This represents the amount of damage being done, also known as the
@@ -292,6 +269,12 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          * Damage: variable
          */
         ENTITY_ATTACK,
+        /**
+         * Damage caused when an entity attacks another entity in a sweep attack.
+         * <p>
+         * Damage: variable
+         */
+        ENTITY_SWEEP_ATTACK,
         /**
          * Damage caused when attacked by a projectile.
          * <p>
@@ -431,6 +414,13 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          * <p>
          * Damage: 1
          */
-        HOT_FLOOR
+        HOT_FLOOR,
+        /**
+         * Damage caused when an entity is colliding with too many entities due
+         * to the maxEntityCramming game rule.
+         * <p>
+         * Damage: 6
+         */
+        CRAMMING
     }
 }

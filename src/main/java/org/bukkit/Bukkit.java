@@ -29,6 +29,7 @@ import org.bukkit.help.HelpMap;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.map.MapView;
 import org.bukkit.permissions.Permissible;
@@ -39,8 +40,8 @@ import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.util.CachedServerIcon;
 
-import com.avaje.ebean.config.ServerConfig;
 import com.google.common.collect.ImmutableList;
+import org.bukkit.advancement.Advancement;
 import org.bukkit.generator.ChunkGenerator;
 
 import org.bukkit.inventory.ItemFactory;
@@ -107,21 +108,6 @@ public final class Bukkit {
      */
     public static String getBukkitVersion() {
         return server.getBukkitVersion();
-    }
-
-    /**
-     * Gets an array copy of all currently logged in players.
-     * <p>
-     * This method exists for legacy reasons to provide backwards
-     * compatibility. It will not exist at runtime and should not be used
-     * under any circumstances.
-     *
-     * @deprecated superseded by {@link #getOnlinePlayers()}
-     * @return an array of Players that are currently online
-     */
-    @Deprecated
-    public static Player[] _INVALID_getOnlinePlayers() {
-        return server._INVALID_getOnlinePlayers();
     }
 
     /**
@@ -211,7 +197,7 @@ public final class Bukkit {
     public static String getServerId() {
         return server.getServerId();
     }
-    
+
     /**
      * Get world type (level-type setting) for default world.
      *
@@ -549,6 +535,14 @@ public final class Bukkit {
     }
 
     /**
+     * Reload only the Minecraft data for the server. This includes custom
+     * advancements and loot tables.
+     */
+    public static void reloadData() {
+        server.reloadData();
+    }
+
+    /**
      * Returns the primary logger associated with this server instance.
      *
      * @return Logger associated with this server
@@ -573,7 +567,7 @@ public final class Bukkit {
     public static void savePlayers() {
         server.savePlayers();
     }
-    
+
     /**
      * Dispatches a command on this server, and executes it if found.
      *
@@ -586,16 +580,6 @@ public final class Bukkit {
      */
     public static boolean dispatchCommand(CommandSender sender, String commandLine) throws CommandException {
         return server.dispatchCommand(sender, commandLine);
-    }
-
-    /**
-     * Populates a given {@link ServerConfig} with values attributes to this
-     * server.
-     *
-     * @param config the server config to populate
-     */
-    public static void configureDbConfig(ServerConfig config) {
-        server.configureDbConfig(config);
     }
 
     /**
@@ -642,7 +626,7 @@ public final class Bukkit {
     public static void resetRecipes() {
         server.resetRecipes();
     }
-    
+
     /**
      * Gets a list of command aliases defined in the server properties.
      *
@@ -697,25 +681,6 @@ public final class Bukkit {
         return server.isHardcore();
     }
 
-    /**
-     * Gets whether to use vanilla (false) or exact behaviour (true).
-     *
-     * <ul>
-     * <li>Vanilla behaviour: check for collisions and move the player if
-     *     needed.
-     * <li>Exact behaviour: spawn players exactly where they should be.
-     * </ul>
-     *
-     * @return true if exact location locations are used for spawning, false
-     *     for vanilla collision detection or otherwise
-     *
-     * @deprecated non standard and unused feature.
-     */
-    @Deprecated
-    public static boolean useExactLoginLocation() {
-        return server.useExactLoginLocation();
-    }
- 
     /**
      * Shutdowns the server, stopping everything.
      */
@@ -816,7 +781,7 @@ public final class Bukkit {
      * @param type the type of list to fetch, cannot be null
      * @return a ban list of the specified type
      */
-    public static BanList getBanList(BanList.Type type){
+    public static BanList getBanList(BanList.Type type) {
         return server.getBanList(type);
     }
 
@@ -951,6 +916,17 @@ public final class Bukkit {
     }
 
     /**
+     * Creates an empty merchant.
+     *
+     * @param title the title of the corresponding merchant inventory, displayed
+     * when the merchant inventory is viewed
+     * @return a new merchant
+     */
+    public static Merchant createMerchant(String title) {
+        return server.createMerchant(title);
+    }
+
+    /**
      * Gets user-specified limit for number of monsters that can spawn in a
      * chunk.
      *
@@ -979,7 +955,7 @@ public final class Bukkit {
     public static int getWaterAnimalSpawnLimit() {
         return server.getWaterAnimalSpawnLimit();
     }
-    
+
     /**
      * Gets user-specified limit for number of ambient mobs that can spawn in
      * a chunk.
@@ -1146,6 +1122,36 @@ public final class Bukkit {
      */
     public static BossBar createBossBar(String title, BarColor color, BarStyle style, BarFlag... flags) {
         return server.createBossBar(title, color, style, flags);
+    }
+
+    /**
+     * Gets an entity on the server by its UUID
+     *
+     * @param uuid the UUID of the entity
+     * @return the entity with the given UUID, or null if it isn't found
+     */
+    public static Entity getEntity(UUID uuid) {
+        return server.getEntity(uuid);
+    }
+
+    /**
+     * Get the advancement specified by this key.
+     *
+     * @param key unique advancement key
+     * @return advancement or null if not exists
+     */
+    public static Advancement getAdvancement(NamespacedKey key) {
+        return server.getAdvancement(key);
+    }
+
+    /**
+     * Get an iterator through all advancements. Advancements cannot be removed
+     * from this iterator,
+     *
+     * @return an advancement iterator
+     */
+    public static Iterator<Advancement> advancementIterator() {
+        return server.advancementIterator();
     }
 
     /**

@@ -1,133 +1,109 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.scheduler;
 
 import java.util.Iterator;
-import org.apache.commons.lang.UnhandledException;
-import org.bukkit.plugin.Plugin;
-import java.util.Map;
-import org.bukkit.scheduler.BukkitWorker;
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.logging.Level;
 
-class CraftAsyncTask extends CraftTask
-{
-    private final LinkedList<BukkitWorker> workers;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitWorker;
+
+class CraftAsyncTask extends CraftTask {
+
+    private final LinkedList<BukkitWorker> workers = new LinkedList<BukkitWorker>();
     private final Map<Integer, CraftTask> runners;
-    
+
     CraftAsyncTask(final Map<Integer, CraftTask> runners, final Plugin plugin, final Runnable task, final int id, final long delay) {
         super(plugin, task, id, delay);
-        this.workers = new LinkedList<BukkitWorker>();
         this.runners = runners;
     }
-    
+
     @Override
     public boolean isSync() {
         return false;
     }
-    
+
     @Override
     public void run() {
         final Thread thread = Thread.currentThread();
-        synchronized (this.workers) {
-            if (this.getPeriod() == -2L) {
-                // monitorexit(this.workers)
+        synchronized(workers) {
+            if (getPeriod() == -2) {
+                // Never continue running after cancelled.
+                // Checking this with the lock is important!
                 return;
             }
-            this.workers.add(new BukkitWorker() {
-                @Override
-                public Thread getThread() {
-                    return thread;
-                }
-                
-                @Override
-                public int getTaskId() {
-                    return CraftAsyncTask.this.getTaskId();
-                }
-                
-                @Override
-                public Plugin getOwner() {
-                    return CraftAsyncTask.this.getOwner();
-                }
-            });
+            workers.add(
+                new BukkitWorker() {
+                    public Thread getThread() {
+                        return thread;
+                    }
+
+                    public int getTaskId() {
+                        return CraftAsyncTask.this.getTaskId();
+                    }
+
+                    public Plugin getOwner() {
+                        return CraftAsyncTask.this.getOwner();
+                    }
+                });
         }
-        // monitorexit(this.workers)
         Throwable thrown = null;
         try {
             super.run();
-        }
-        catch (Throwable t) {
+        } catch (final Throwable t) {
             thrown = t;
-            throw new UnhandledException(String.format("Plugin %s generated an exception while executing task %s", this.getOwner().getDescription().getFullName(), this.getTaskId()), thrown);
-        }
-        finally {
-            synchronized (this.workers) {
+            getOwner().getLogger().log(
+                    Level.WARNING,
+                    String.format(
+                        "Plugin %s generated an exception while executing task %s",
+                        getOwner().getDescription().getFullName(),
+                        getTaskId()),
+                    thrown);
+        } finally {
+            // Cleanup is important for any async task, otherwise ghost tasks are everywhere
+            synchronized(workers) {
                 try {
                     final Iterator<BukkitWorker> workers = this.workers.iterator();
                     boolean removed = false;
                     while (workers.hasNext()) {
                         if (workers.next().getThread() == thread) {
                             workers.remove();
-                            removed = true;
+                            removed = true; // Don't throw exception
                             break;
                         }
                     }
                     if (!removed) {
-                        throw new IllegalStateException(String.format("Unable to remove worker %s on task %s for %s", thread.getName(), this.getTaskId(), this.getOwner().getDescription().getFullName()), thrown);
+                        throw new IllegalStateException(
+                                String.format(
+                                    "Unable to remove worker %s on task %s for %s",
+                                    thread.getName(),
+                                    getTaskId(),
+                                    getOwner().getDescription().getFullName()),
+                                thrown); // We don't want to lose the original exception, if any
+                    }
+                } finally {
+                    if (getPeriod() < 0 && workers.isEmpty()) {
+                        // At this spot, we know we are the final async task being executed!
+                        // Because we have the lock, nothing else is running or will run because delay < 0
+                        runners.remove(getTaskId());
                     }
                 }
-                finally {
-                    if (this.getPeriod() < 0L && this.workers.isEmpty()) {
-                        this.runners.remove(this.getTaskId());
-                    }
-                }
-                if (this.getPeriod() < 0L && this.workers.isEmpty()) {
-                    this.runners.remove(this.getTaskId());
-                }
-            }
-            // monitorexit(this.workers)
-        }
-        synchronized (this.workers) {
-            try {
-                final Iterator<BukkitWorker> workers = this.workers.iterator();
-                boolean removed = false;
-                while (workers.hasNext()) {
-                    if (workers.next().getThread() == thread) {
-                        workers.remove();
-                        removed = true;
-                        break;
-                    }
-                }
-                if (!removed) {
-                    throw new IllegalStateException(String.format("Unable to remove worker %s on task %s for %s", thread.getName(), this.getTaskId(), this.getOwner().getDescription().getFullName()), thrown);
-                }
-            }
-            finally {
-                if (this.getPeriod() < 0L && this.workers.isEmpty()) {
-                    this.runners.remove(this.getTaskId());
-                }
-            }
-            if (this.getPeriod() < 0L && this.workers.isEmpty()) {
-                this.runners.remove(this.getTaskId());
             }
         }
-        // monitorexit(this.workers)
     }
-    
+
     LinkedList<BukkitWorker> getWorkers() {
-        return this.workers;
+        return workers;
     }
-    
-    @Override
+
     boolean cancel0() {
-        synchronized (this.workers) {
-            this.setPeriod(-2L);
-            if (this.workers.isEmpty()) {
-                this.runners.remove(this.getTaskId());
+        synchronized (workers) {
+            // Synchronizing here prevents race condition for a completing task
+            setPeriod(-2l);
+            if (workers.isEmpty()) {
+                runners.remove(getTaskId());
             }
         }
-        // monitorexit(this.workers)
         return true;
     }
 }

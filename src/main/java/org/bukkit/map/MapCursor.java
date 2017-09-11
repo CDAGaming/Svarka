@@ -28,6 +28,23 @@ public final class MapCursor {
     }
 
     /**
+     * Initialize the map cursor.
+     *
+     * @param x The x coordinate, from -128 to 127.
+     * @param y The y coordinate, from -128 to 127.
+     * @param direction The facing of the cursor, from 0 to 15.
+     * @param type The type (color/style) of the map cursor.
+     * @param visible Whether the cursor is visible by default.
+     */
+    public MapCursor(byte x, byte y, byte direction, Type type, boolean visible) {
+        this.x = x;
+        this.y = y;
+        setDirection(direction);
+        setType(type);
+        this.visible = visible;
+    }
+
+    /**
      * Get the X position of this cursor.
      *
      * @return The X coordinate.
@@ -147,16 +164,21 @@ public final class MapCursor {
 
     /**
      * Represents the standard types of map cursors. More may be made
-     * available by texture packs - the value is used by the client as an
+     * available by resource packs - the value is used by the client as an
      * index in the file './misc/mapicons.png' from minecraft.jar or from a
-     * texture pack.
+     * resource pack.
      */
     public enum Type {
         WHITE_POINTER(0),
         GREEN_POINTER(1),
         RED_POINTER(2),
         BLUE_POINTER(3),
-        WHITE_CROSS(4);
+        WHITE_CROSS(4),
+        RED_MARKER(5),
+        WHITE_CIRCLE(6),
+        SMALL_WHITE_CIRCLE(7),
+        MANSION(8),
+        TEMPLE(9);
 
         private byte value;
 

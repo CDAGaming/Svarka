@@ -1,63 +1,54 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import org.bukkit.entity.EntityType;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.server.BlockPosition;
+import net.minecraft.server.EntityEnderCrystal;
 import org.bukkit.Location;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.item.EntityEnderCrystal;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EnderCrystal;
+import org.bukkit.entity.EntityType;
 
-public class CraftEnderCrystal extends CraftEntity implements EnderCrystal
-{
-    public CraftEnderCrystal(final CraftServer server, final EntityEnderCrystal entity) {
+public class CraftEnderCrystal extends CraftEntity implements EnderCrystal {
+    public CraftEnderCrystal(CraftServer server, EntityEnderCrystal entity) {
         super(server, entity);
     }
-    
+
     @Override
     public boolean isShowingBottom() {
-        return this.getHandle().shouldShowBottom();
+        return getHandle().isShowingBottom();
     }
-    
+
     @Override
-    public void setShowingBottom(final boolean showing) {
-        this.getHandle().setShowBottom(showing);
+    public void setShowingBottom(boolean showing) {
+        getHandle().setShowingBottom(showing);
     }
-    
+
     @Override
     public Location getBeamTarget() {
-        final BlockPos pos = this.getHandle().getBeamTarget();
-        return (pos == null) ? null : new Location(this.getWorld(), pos.getX(), pos.getY(), pos.getZ());
+        BlockPosition pos = getHandle().getBeamTarget();
+        return pos == null ? null : new Location(getWorld(), pos.getX(), pos.getY(), pos.getZ());
     }
-    
+
     @Override
-    public void setBeamTarget(final Location location) {
+    public void setBeamTarget(Location location) {
         if (location == null) {
-            this.getHandle().setBeamTarget(null);
-        }
-        else {
-            if (location.getWorld() != this.getWorld()) {
-                throw new IllegalArgumentException("Cannot set beam target location to different world");
-            }
-            this.getHandle().setBeamTarget(new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
+            getHandle().setBeamTarget((BlockPosition) null);
+        } else if (location.getWorld() != getWorld()) {
+            throw new IllegalArgumentException("Cannot set beam target location to different world");
+        } else {
+            getHandle().setBeamTarget(new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
         }
     }
-    
+
     @Override
     public EntityEnderCrystal getHandle() {
-        return (EntityEnderCrystal)this.entity;
+        return (EntityEnderCrystal) entity;
     }
-    
+
     @Override
     public String toString() {
         return "CraftEnderCrystal";
     }
-    
-    @Override
+
     public EntityType getType() {
         return EntityType.ENDER_CRYSTAL;
     }

@@ -1,55 +1,47 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import org.bukkit.entity.EntityType;
-import org.bukkit.event.entity.EntityDamageEvent;
-import net.minecraft.entity.boss.EntityDragon;
-import org.bukkit.entity.ComplexLivingEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.boss.EntityDragonPart;
+import net.minecraft.server.EntityComplexPart;
+import net.minecraft.server.EntityEnderDragon;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.ComplexEntityPart;
+import org.bukkit.entity.ComplexLivingEntity;
+import org.bukkit.entity.EntityType;
+import org.bukkit.event.entity.EntityDamageEvent;
 
-public class CraftComplexPart extends CraftEntity implements ComplexEntityPart
-{
-    public CraftComplexPart(final CraftServer server, final EntityDragonPart entity) {
+public class CraftComplexPart extends CraftEntity implements ComplexEntityPart {
+    public CraftComplexPart(CraftServer server, EntityComplexPart entity) {
         super(server, entity);
     }
-    
-    @Override
+
     public ComplexLivingEntity getParent() {
-        return (ComplexLivingEntity)((EntityDragon)this.getHandle().entityDragonObj).getBukkitEntity();
+        return (ComplexLivingEntity) ((EntityEnderDragon) getHandle().owner).getBukkitEntity();
     }
-    
+
     @Override
-    public void setLastDamageCause(final EntityDamageEvent cause) {
-        this.getParent().setLastDamageCause(cause);
+    public void setLastDamageCause(EntityDamageEvent cause) {
+        getParent().setLastDamageCause(cause);
     }
-    
+
     @Override
     public EntityDamageEvent getLastDamageCause() {
-        return this.getParent().getLastDamageCause();
+        return getParent().getLastDamageCause();
     }
-    
+
     @Override
     public boolean isValid() {
-        return this.getParent().isValid();
+        return getParent().isValid();
     }
-    
+
     @Override
-    public EntityDragonPart getHandle() {
-        return (EntityDragonPart)this.entity;
+    public EntityComplexPart getHandle() {
+        return (EntityComplexPart) entity;
     }
-    
+
     @Override
     public String toString() {
         return "CraftComplexPart";
     }
-    
-    @Override
+
     public EntityType getType() {
         return EntityType.COMPLEX_PART;
     }

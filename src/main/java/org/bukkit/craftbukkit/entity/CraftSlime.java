@@ -1,42 +1,35 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import org.bukkit.entity.EntityType;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.monster.EntitySlime;
+import net.minecraft.server.EntitySlime;
+
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Slime;
 
-public class CraftSlime extends CraftLivingEntity implements Slime
-{
-    public CraftSlime(final CraftServer server, final EntitySlime entity) {
+public class CraftSlime extends CraftLivingEntity implements Slime {
+
+    public CraftSlime(CraftServer server, EntitySlime entity) {
         super(server, entity);
     }
-    
-    @Override
+
     public int getSize() {
-        return this.getHandle().getSlimeSize();
+        return getHandle().getSize();
     }
-    
-    @Override
-    public void setSize(final int size) {
-        this.getHandle().setSlimeSize(size);
+
+    public void setSize(int size) {
+        getHandle().setSize(size, true);
     }
-    
+
     @Override
     public EntitySlime getHandle() {
-        return (EntitySlime)this.entity;
+        return (EntitySlime) entity;
     }
-    
+
     @Override
     public String toString() {
         return "CraftSlime";
     }
-    
-    @Override
+
     public EntityType getType() {
         return EntityType.SLIME;
     }

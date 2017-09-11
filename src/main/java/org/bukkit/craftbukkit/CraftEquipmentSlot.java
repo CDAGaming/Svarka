@@ -1,38 +1,32 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit;
 
+import net.minecraft.server.EnumItemSlot;
 import org.bukkit.inventory.EquipmentSlot;
-import net.minecraft.inventory.EntityEquipmentSlot;
 
-public class CraftEquipmentSlot
-{
-    private static final EntityEquipmentSlot[] slots;
-    private static final EquipmentSlot[] enums;
-    
+public class CraftEquipmentSlot {
+
+    private static final EnumItemSlot[] slots = new EnumItemSlot[EquipmentSlot.values().length];
+    private static final EquipmentSlot[] enums = new EquipmentSlot[EnumItemSlot.values().length];
+
     static {
-        slots = new EntityEquipmentSlot[EquipmentSlot.values().length];
-        enums = new EquipmentSlot[EntityEquipmentSlot.values().length];
-        set(EquipmentSlot.HAND, EntityEquipmentSlot.MAINHAND);
-        set(EquipmentSlot.OFF_HAND, EntityEquipmentSlot.OFFHAND);
-        set(EquipmentSlot.FEET, EntityEquipmentSlot.FEET);
-        set(EquipmentSlot.LEGS, EntityEquipmentSlot.LEGS);
-        set(EquipmentSlot.CHEST, EntityEquipmentSlot.CHEST);
-        set(EquipmentSlot.HEAD, EntityEquipmentSlot.HEAD);
+        set(EquipmentSlot.HAND, EnumItemSlot.MAINHAND);
+        set(EquipmentSlot.OFF_HAND, EnumItemSlot.OFFHAND);
+        set(EquipmentSlot.FEET, EnumItemSlot.FEET);
+        set(EquipmentSlot.LEGS, EnumItemSlot.LEGS);
+        set(EquipmentSlot.CHEST, EnumItemSlot.CHEST);
+        set(EquipmentSlot.HEAD, EnumItemSlot.HEAD);
     }
-    
-    private static void set(final EquipmentSlot type, final EntityEquipmentSlot value) {
-        CraftEquipmentSlot.slots[type.ordinal()] = value;
-        CraftEquipmentSlot.enums[value.ordinal()] = type;
+
+    private static void set(EquipmentSlot type, EnumItemSlot value) {
+        slots[type.ordinal()] = value;
+        enums[value.ordinal()] = type;
     }
-    
-    public static EquipmentSlot getSlot(final EntityEquipmentSlot nms) {
-        return CraftEquipmentSlot.enums[nms.ordinal()];
+
+    public static EquipmentSlot getSlot(EnumItemSlot nms) {
+        return enums[nms.ordinal()];
     }
-    
-    public static EntityEquipmentSlot getNMS(final EquipmentSlot slot) {
-        return CraftEquipmentSlot.slots[slot.ordinal()];
+
+    public static EnumItemSlot getNMS(EquipmentSlot slot) {
+        return slots[slot.ordinal()];
     }
 }

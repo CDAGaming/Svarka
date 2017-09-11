@@ -1,44 +1,46 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.block;
 
-import net.minecraft.item.Item;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
-import org.bukkit.material.MaterialData;
+import net.minecraft.server.ItemStack;
+import net.minecraft.server.TileEntityFlowerPot;
 import org.bukkit.Material;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.block.Block;
-import net.minecraft.tileentity.TileEntityFlowerPot;
 import org.bukkit.block.FlowerPot;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.material.MaterialData;
 
-public class CraftFlowerPot extends CraftBlockState implements FlowerPot
-{
-    private final TileEntityFlowerPot pot;
-    
-    public CraftFlowerPot(final Block block) {
-        super(block);
-        this.pot = (TileEntityFlowerPot)((CraftWorld)block.getWorld()).getTileEntityAt(this.getX(), this.getY(), this.getZ());
+public class CraftFlowerPot extends CraftBlockEntityState<TileEntityFlowerPot> implements FlowerPot {
+
+    private MaterialData contents;
+
+    public CraftFlowerPot(Block block) {
+        super(block, TileEntityFlowerPot.class);
     }
-    
-    public CraftFlowerPot(final Material material, final TileEntityFlowerPot pot) {
-        super(material);
-        this.pot = pot;
+
+    public CraftFlowerPot(Material material, TileEntityFlowerPot te) {
+        super(material, te);
     }
-    
+
+    @Override
+    public void load(TileEntityFlowerPot pot) {
+        super.load(pot);
+
+        contents = (pot.getItem() == null) ? null : CraftItemStack.asBukkitCopy(pot.getContents()).getData();
+    }
+
     @Override
     public MaterialData getContents() {
-        return (this.pot.getFlowerItemStack() == null) ? null : CraftMagicNumbers.getMaterial(this.pot.getFlowerPotItem()).getNewData((byte)this.pot.getFlowerPotData());
+        return contents;
     }
-    
+
     @Override
-    public void setContents(final MaterialData item) {
-        if (item == null) {
-            this.pot.setFlowerPotData(null, 0);
-        }
-        else {
-            this.pot.setFlowerPotData(CraftMagicNumbers.getItem(item.getItemType()), item.getData());
-        }
+    public void setContents(MaterialData item) {
+        contents = item;
+    }
+
+    @Override
+    public void applyTo(TileEntityFlowerPot pot) {
+        super.applyTo(pot);
+
+        pot.setContents(contents == null ? ItemStack.a : CraftItemStack.asNMSCopy(contents.toItemStack(1)));
     }
 }

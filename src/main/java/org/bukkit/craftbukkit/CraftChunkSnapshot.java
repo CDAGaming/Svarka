@@ -1,30 +1,30 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit;
 
-import org.bukkit.craftbukkit.block.CraftBlock;
-import net.minecraft.world.biome.Biome;
 import org.bukkit.ChunkSnapshot;
+import org.bukkit.block.Biome;
+import org.bukkit.craftbukkit.block.CraftBlock;
 
-public class CraftChunkSnapshot implements ChunkSnapshot
-{
-    private final int x;
-    private final int z;
+import net.minecraft.server.BiomeBase;
+
+/**
+ * Represents a static, thread-safe snapshot of chunk of blocks
+ * Purpose is to allow clean, efficient copy of a chunk data to be made, and then handed off for processing in another thread (e.g. map rendering)
+ */
+public class CraftChunkSnapshot implements ChunkSnapshot {
+    private final int x, z;
     private final String worldname;
-    private final short[][] blockids;
+    private final short[][] blockids; /* Block IDs, by section */
     private final byte[][] blockdata;
     private final byte[][] skylight;
     private final byte[][] emitlight;
     private final boolean[] empty;
-    private final int[] hmap;
+    private final int[] hmap; // Height map
     private final long captureFulltime;
-    private final Biome[] biome;
+    private final BiomeBase[] biome;
     private final double[] biomeTemp;
     private final double[] biomeRain;
-    
-    CraftChunkSnapshot(final int x, final int z, final String wname, final long wtime, final short[][] sectionBlockIDs, final byte[][] sectionBlockData, final byte[][] sectionSkyLights, final byte[][] sectionEmitLights, final boolean[] sectionEmpty, final int[] hmap, final Biome[] biome, final double[] biomeTemp, final double[] biomeRain) {
+
+    CraftChunkSnapshot(int x, int z, String wname, long wtime, short[][] sectionBlockIDs, byte[][] sectionBlockData, byte[][] sectionSkyLights, byte[][] sectionEmitLights, boolean[] sectionEmpty, int[] hmap, BiomeBase[] biome, double[] biomeTemp, double[] biomeRain) {
         this.x = x;
         this.z = z;
         this.worldname = wname;
@@ -39,72 +39,59 @@ public class CraftChunkSnapshot implements ChunkSnapshot
         this.biomeTemp = biomeTemp;
         this.biomeRain = biomeRain;
     }
-    
-    @Override
+
     public int getX() {
-        return this.x;
+        return x;
     }
-    
-    @Override
+
     public int getZ() {
-        return this.z;
+        return z;
     }
-    
-    @Override
+
     public String getWorldName() {
-        return this.worldname;
+        return worldname;
     }
-    
-    @Override
-    public final int getBlockTypeId(final int x, final int y, final int z) {
-        return this.blockids[y >> 4][(y & 0xF) << 8 | z << 4 | x];
+
+    public final int getBlockTypeId(int x, int y, int z) {
+        return blockids[y >> 4][((y & 0xF) << 8) | (z << 4) | x];
     }
-    
-    @Override
-    public final int getBlockData(final int x, final int y, final int z) {
-        final int off = (y & 0xF) << 7 | z << 3 | x >> 1;
-        return this.blockdata[y >> 4][off] >> ((x & 0x1) << 2) & 0xF;
+
+    public final int getBlockData(int x, int y, int z) {
+        int off = ((y & 0xF) << 7) | (z << 3) | (x >> 1);
+        return (blockdata[y >> 4][off] >> ((x & 1) << 2)) & 0xF;
     }
-    
-    @Override
-    public final int getBlockSkyLight(final int x, final int y, final int z) {
-        final int off = (y & 0xF) << 7 | z << 3 | x >> 1;
-        return this.skylight[y >> 4][off] >> ((x & 0x1) << 2) & 0xF;
+
+    public final int getBlockSkyLight(int x, int y, int z) {
+        int off = ((y & 0xF) << 7) | (z << 3) | (x >> 1);
+        return (skylight[y >> 4][off] >> ((x & 1) << 2)) & 0xF;
     }
-    
-    @Override
-    public final int getBlockEmittedLight(final int x, final int y, final int z) {
-        final int off = (y & 0xF) << 7 | z << 3 | x >> 1;
-        return this.emitlight[y >> 4][off] >> ((x & 0x1) << 2) & 0xF;
+
+    public final int getBlockEmittedLight(int x, int y, int z) {
+        int off = ((y & 0xF) << 7) | (z << 3) | (x >> 1);
+        return (emitlight[y >> 4][off] >> ((x & 1) << 2)) & 0xF;
     }
-    
-    @Override
-    public final int getHighestBlockYAt(final int x, final int z) {
-        return this.hmap[z << 4 | x];
+
+    public final int getHighestBlockYAt(int x, int z) {
+        return hmap[z << 4 | x];
     }
-    
-    @Override
-    public final org.bukkit.block.Biome getBiome(final int x, final int z) {
-        return CraftBlock.biomeBaseToBiome(this.biome[z << 4 | x]);
+
+    public final Biome getBiome(int x, int z) {
+        return CraftBlock.biomeBaseToBiome(biome[z << 4 | x]);
     }
-    
-    @Override
-    public final double getRawBiomeTemperature(final int x, final int z) {
-        return this.biomeTemp[z << 4 | x];
+
+    public final double getRawBiomeTemperature(int x, int z) {
+        return biomeTemp[z << 4 | x];
     }
-    
-    @Override
-    public final double getRawBiomeRainfall(final int x, final int z) {
-        return this.biomeRain[z << 4 | x];
+
+    public final double getRawBiomeRainfall(int x, int z) {
+        return biomeRain[z << 4 | x];
     }
-    
-    @Override
+
     public final long getCaptureFullTime() {
-        return this.captureFulltime;
+        return captureFulltime;
     }
-    
-    @Override
-    public final boolean isSectionEmpty(final int sy) {
-        return this.empty[sy];
+
+    public final boolean isSectionEmpty(int sy) {
+        return empty[sy];
     }
 }

@@ -136,11 +136,8 @@ public final class SimplePluginManager implements PluginManager {
                     server.getLogger().log(Level.SEVERE, "Could not load '" + file.getPath() + "' in folder '" + directory.getPath() + "': Restricted Name");
                     continue;
                 } else if (description.rawName.indexOf(' ') != -1) {
-                    server.getLogger().warning(String.format(
-                        "Plugin `%s' uses the space-character (0x20) in its name `%s' - this is discouraged",
-                        description.getFullName(),
-                        description.rawName
-                        ));
+                    server.getLogger().log(Level.SEVERE, "Could not load '" + file.getPath() + "' in folder '" + directory.getPath() + "': uses the space-character (0x20) in its name");
+                    continue;
                 }
             } catch (InvalidDescriptionException ex) {
                 server.getLogger().log(Level.SEVERE, "Could not load '" + file.getPath() + "' in folder '" + directory.getPath() + "'", ex);
@@ -155,7 +152,7 @@ public final class SimplePluginManager implements PluginManager {
                     file.getPath(),
                     replacedFile.getPath(),
                     directory.getPath()
-                    ));
+                ));
             }
 
             Collection<String> softDependencySet = description.getSoftDepend();
@@ -446,7 +443,7 @@ public final class SimplePluginManager implements PluginManager {
             try {
                 server.getMessenger().unregisterIncomingPluginChannel(plugin);
                 server.getMessenger().unregisterOutgoingPluginChannel(plugin);
-            } catch(Throwable ex) {
+            } catch (Throwable ex) {
                 server.getLogger().log(Level.SEVERE, "Error occurred (in the plugin loader) while unregistering plugin channels for " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
             }
         }
@@ -592,6 +589,11 @@ public final class SimplePluginManager implements PluginManager {
     }
 
     public void addPermission(Permission perm) {
+        addPermission(perm, true);
+    }
+
+    @Deprecated
+    public void addPermission(Permission perm, boolean dirty) {
         String name = perm.getName().toLowerCase(java.util.Locale.ENGLISH);
 
         if (permissions.containsKey(name)) {
@@ -599,7 +601,7 @@ public final class SimplePluginManager implements PluginManager {
         }
 
         permissions.put(name, perm);
-        calculatePermissionDefault(perm);
+        calculatePermissionDefault(perm, dirty);
     }
 
     public Set<Permission> getDefaultPermissions(boolean op) {
@@ -619,19 +621,29 @@ public final class SimplePluginManager implements PluginManager {
             defaultPerms.get(true).remove(perm);
             defaultPerms.get(false).remove(perm);
 
-            calculatePermissionDefault(perm);
+            calculatePermissionDefault(perm, true);
         }
     }
 
-    private void calculatePermissionDefault(Permission perm) {
+    private void calculatePermissionDefault(Permission perm, boolean dirty) {
         if ((perm.getDefault() == PermissionDefault.OP) || (perm.getDefault() == PermissionDefault.TRUE)) {
             defaultPerms.get(true).add(perm);
-            dirtyPermissibles(true);
+            if (dirty) {
+                dirtyPermissibles(true);
+            }
         }
         if ((perm.getDefault() == PermissionDefault.NOT_OP) || (perm.getDefault() == PermissionDefault.TRUE)) {
             defaultPerms.get(false).add(perm);
-            dirtyPermissibles(false);
+            if (dirty) {
+                dirtyPermissibles(false);
+            }
         }
+    }
+
+    @Deprecated
+    public void dirtyPermissibles() {
+        dirtyPermissibles(true);
+        dirtyPermissibles(false);
     }
 
     private void dirtyPermissibles(boolean op) {

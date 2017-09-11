@@ -1,71 +1,73 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.FireworkMeta;
-import org.bukkit.entity.EntityType;
+import net.minecraft.server.EntityFireworks;
+import net.minecraft.server.ItemStack;
+import net.minecraft.server.Items;
+
 import org.bukkit.Material;
-import net.minecraft.init.Items;
-import com.google.common.base.Optional;
-import net.minecraft.item.ItemStack;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.item.EntityFireworkRocket;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import java.util.Random;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Firework;
+import org.bukkit.inventory.meta.FireworkMeta;
 
-public class CraftFirework extends CraftEntity implements Firework
-{
-    private final Random random;
+import java.util.Random;
+
+public class CraftFirework extends CraftEntity implements Firework {
+
+    private final Random random = new Random();
     private final CraftItemStack item;
-    
-    public CraftFirework(final CraftServer server, final EntityFireworkRocket entity) {
+
+    public CraftFirework(CraftServer server, EntityFireworks entity) {
         super(server, entity);
-        this.random = new Random();
-        ItemStack item = (ItemStack)this.getHandle().getDataManager().get(EntityFireworkRocket.FIREWORK_ITEM).orNull();
-        if (item == null) {
+
+        ItemStack item = getHandle().getDataWatcher().get(EntityFireworks.FIREWORK_ITEM);
+
+        if (item.isEmpty()) {
             item = new ItemStack(Items.FIREWORKS);
-            this.getHandle().getDataManager().set(EntityFireworkRocket.FIREWORK_ITEM, /*(Optional<ItemStack>)*/Optional.of(/*(Object)*/item));
+            getHandle().getDataWatcher().set(EntityFireworks.FIREWORK_ITEM, item);
         }
+
         this.item = CraftItemStack.asCraftMirror(item);
+
+        // Ensure the item is a firework...
         if (this.item.getType() != Material.FIREWORK) {
             this.item.setType(Material.FIREWORK);
         }
     }
-    
+
     @Override
-    public EntityFireworkRocket getHandle() {
-        return (EntityFireworkRocket)this.entity;
+    public EntityFireworks getHandle() {
+        return (EntityFireworks) entity;
     }
-    
+
     @Override
     public String toString() {
         return "CraftFirework";
     }
-    
+
     @Override
     public EntityType getType() {
         return EntityType.FIREWORK;
     }
-    
+
     @Override
     public FireworkMeta getFireworkMeta() {
-        return (FireworkMeta)this.item.getItemMeta();
+        return (FireworkMeta) item.getItemMeta();
     }
-    
+
     @Override
-    public void setFireworkMeta(final FireworkMeta meta) {
-        this.item.setItemMeta(meta);
-        this.getHandle().lifetime = 10 * (1 + meta.getPower()) + this.random.nextInt(6) + this.random.nextInt(7);
-        this.getHandle().getDataManager().setDirty(EntityFireworkRocket.FIREWORK_ITEM);
+    public void setFireworkMeta(FireworkMeta meta) {
+        item.setItemMeta(meta);
+
+        // Copied from EntityFireworks constructor, update firework lifetime/power
+        getHandle().expectedLifespan = 10 * (1 + meta.getPower()) + random.nextInt(6) + random.nextInt(7);
+
+        getHandle().getDataWatcher().markDirty(EntityFireworks.FIREWORK_ITEM);
     }
-    
+
     @Override
     public void detonate() {
-        this.getHandle().lifetime = 0;
+        getHandle().expectedLifespan = 0;
     }
 }

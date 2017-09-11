@@ -1,141 +1,139 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.entity.EntityLivingBase;
-import org.bukkit.projectiles.ProjectileSource;
-import org.apache.commons.lang.Validate;
-import org.bukkit.potion.PotionData;
-import org.bukkit.potion.PotionEffectType;
-import com.google.common.collect.ImmutableList;
 import java.util.List;
-import java.util.Iterator;
-import org.bukkit.craftbukkit.potion.CraftPotionUtil;
-import net.minecraft.potion.Potion;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.Color;
-import org.bukkit.craftbukkit.CraftParticle;
-import org.bukkit.Particle;
-import org.bukkit.entity.EntityType;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityAreaEffectCloud;
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.AreaEffectCloud;
+import net.minecraft.server.EntityAreaEffectCloud;
+import net.minecraft.server.EntityLiving;
+import net.minecraft.server.MobEffect;
+import net.minecraft.server.MobEffectList;
 
-public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
-{
-    public CraftAreaEffectCloud(final CraftServer server, final EntityAreaEffectCloud entity) {
+import org.apache.commons.lang.Validate;
+import org.bukkit.Color;
+import org.bukkit.Particle;
+import org.bukkit.craftbukkit.CraftParticle;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.potion.CraftPotionUtil;
+import org.bukkit.entity.AreaEffectCloud;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.projectiles.ProjectileSource;
+import org.bukkit.potion.PotionData;
+
+import com.google.common.collect.ImmutableList;
+
+public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud {
+
+    public CraftAreaEffectCloud(CraftServer server, EntityAreaEffectCloud entity) {
         super(server, entity);
     }
-    
+
     @Override
     public EntityAreaEffectCloud getHandle() {
-        return (EntityAreaEffectCloud)super.getHandle();
+        return (EntityAreaEffectCloud) super.getHandle();
     }
-    
+
     @Override
     public EntityType getType() {
         return EntityType.AREA_EFFECT_CLOUD;
     }
-    
+
     @Override
     public int getDuration() {
-        return this.getHandle().getDuration();
+        return getHandle().getDuration();
     }
-    
+
     @Override
-    public void setDuration(final int duration) {
-        this.getHandle().setDuration(duration);
+    public void setDuration(int duration) {
+        getHandle().setDuration(duration);
     }
-    
+
     @Override
     public int getWaitTime() {
-        return this.getHandle().waitTime;
+        return getHandle().waitTime;
     }
-    
+
     @Override
-    public void setWaitTime(final int waitTime) {
-        this.getHandle().setWaitTime(waitTime);
+    public void setWaitTime(int waitTime) {
+        getHandle().setWaitTime(waitTime);
     }
-    
+
     @Override
     public int getReapplicationDelay() {
-        return this.getHandle().reapplicationDelay;
+        return getHandle().reapplicationDelay;
     }
-    
+
     @Override
-    public void setReapplicationDelay(final int delay) {
-        this.getHandle().reapplicationDelay = delay;
+    public void setReapplicationDelay(int delay) {
+        getHandle().reapplicationDelay = delay;
     }
-    
+
     @Override
     public int getDurationOnUse() {
-        return this.getHandle().durationOnUse;
+        return getHandle().durationOnUse;
     }
-    
+
     @Override
-    public void setDurationOnUse(final int duration) {
-        this.getHandle().durationOnUse = duration;
+    public void setDurationOnUse(int duration) {
+        getHandle().durationOnUse = duration;
     }
-    
+
     @Override
     public float getRadius() {
-        return this.getHandle().getRadius();
+        return getHandle().getRadius();
     }
-    
+
     @Override
-    public void setRadius(final float radius) {
-        this.getHandle().setRadius(radius);
+    public void setRadius(float radius) {
+        getHandle().setRadius(radius);
     }
-    
+
     @Override
     public float getRadiusOnUse() {
-        return this.getHandle().radiusOnUse;
+        return getHandle().radiusOnUse;
     }
-    
+
     @Override
-    public void setRadiusOnUse(final float radius) {
-        this.getHandle().setRadiusOnUse(radius);
+    public void setRadiusOnUse(float radius) {
+        getHandle().setRadiusOnUse(radius);
     }
-    
+
     @Override
     public float getRadiusPerTick() {
-        return this.getHandle().radiusPerTick;
+        return getHandle().radiusPerTick;
     }
-    
+
     @Override
-    public void setRadiusPerTick(final float radius) {
-        this.getHandle().setRadiusPerTick(radius);
+    public void setRadiusPerTick(float radius) {
+        getHandle().setRadiusPerTick(radius);
     }
-    
+
     @Override
     public Particle getParticle() {
-        return CraftParticle.toBukkit(this.getHandle().getParticle());
+        return CraftParticle.toBukkit(getHandle().getParticle());
     }
-    
+
     @Override
-    public void setParticle(final Particle particle) {
-        this.getHandle().setParticle(CraftParticle.toNMS(particle));
+    public void setParticle(Particle particle) {
+        getHandle().setParticle(CraftParticle.toNMS(particle));
     }
-    
+
     @Override
     public Color getColor() {
-        return Color.fromRGB(this.getHandle().getColor());
+        return Color.fromRGB(getHandle().getColor());
     }
-    
+
     @Override
-    public void setColor(final Color color) {
-        this.getHandle().setColor(color.asRGB());
+    public void setColor(Color color) {
+        getHandle().setColor(color.asRGB());
     }
-    
+
     @Override
-    public boolean addCustomEffect(final PotionEffect effect, final boolean override) {
-        final int effectId = effect.getType().getId();
-        net.minecraft.potion.PotionEffect existing = null;
-        for (final net.minecraft.potion.PotionEffect mobEffect : this.getHandle().effects) {
-            if (Potion.getIdFromPotion(mobEffect.getPotion()) == effectId) {
+    public boolean addCustomEffect(PotionEffect effect, boolean override) {
+        int effectId = effect.getType().getId();
+        MobEffect existing = null;
+        for (MobEffect mobEffect : getHandle().effects) {
+            if (MobEffectList.getId(mobEffect.getMobEffect()) == effectId) {
                 existing = mobEffect;
             }
         }
@@ -143,84 +141,81 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
             if (!override) {
                 return false;
             }
-            this.getHandle().effects.remove(existing);
+            getHandle().effects.remove(existing);
         }
-        this.getHandle().addEffect(CraftPotionUtil.fromBukkit(effect));
-        this.getHandle().refreshEffects();
+        getHandle().a(CraftPotionUtil.fromBukkit(effect));
+        getHandle().refreshEffects();
         return true;
     }
-    
+
     @Override
     public void clearCustomEffects() {
-        this.getHandle().effects.clear();
-        this.getHandle().refreshEffects();
+        getHandle().effects.clear();
+        getHandle().refreshEffects();
     }
-    
+
     @Override
     public List<PotionEffect> getCustomEffects() {
-        final ImmutableList.Builder<PotionEffect> builder = /*(ImmutableList.Builder<PotionEffect>)*/ImmutableList.builder();
-        for (final net.minecraft.potion.PotionEffect effect : this.getHandle().effects) {
-            builder.add(/*(Object)*/CraftPotionUtil.toBukkit(effect));
+        ImmutableList.Builder<PotionEffect> builder = ImmutableList.builder();
+        for (MobEffect effect : getHandle().effects) {
+            builder.add(CraftPotionUtil.toBukkit(effect));
         }
-        return (List<PotionEffect>)builder.build();
+        return builder.build();
     }
-    
+
     @Override
-    public boolean hasCustomEffect(final PotionEffectType type) {
-        for (final net.minecraft.potion.PotionEffect effect : this.getHandle().effects) {
-            if (CraftPotionUtil.equals(effect.getPotion(), type)) {
+    public boolean hasCustomEffect(PotionEffectType type) {
+        for (MobEffect effect : getHandle().effects) {
+            if (CraftPotionUtil.equals(effect.getMobEffect(), type)) {
                 return true;
             }
         }
         return false;
     }
-    
+
     @Override
     public boolean hasCustomEffects() {
-        return !this.getHandle().effects.isEmpty();
+        return !getHandle().effects.isEmpty();
     }
-    
+
     @Override
-    public boolean removeCustomEffect(final PotionEffectType effect) {
-        final int effectId = effect.getId();
-        net.minecraft.potion.PotionEffect existing = null;
-        for (final net.minecraft.potion.PotionEffect mobEffect : this.getHandle().effects) {
-            if (Potion.getIdFromPotion(mobEffect.getPotion()) == effectId) {
+    public boolean removeCustomEffect(PotionEffectType effect) {
+        int effectId = effect.getId();
+        MobEffect existing = null;
+        for (MobEffect mobEffect : getHandle().effects) {
+            if (MobEffectList.getId(mobEffect.getMobEffect()) == effectId) {
                 existing = mobEffect;
             }
         }
         if (existing == null) {
             return false;
         }
-        this.getHandle().effects.remove(existing);
-        this.getHandle().refreshEffects();
+        getHandle().effects.remove(existing);
+        getHandle().refreshEffects();
         return true;
     }
-    
+
     @Override
-    public void setBasePotionData(final PotionData data) {
-        Validate.notNull((Object)data, "PotionData cannot be null");
-        this.getHandle().setType(CraftPotionUtil.fromBukkit(data));
+    public void setBasePotionData(PotionData data) {
+        Validate.notNull(data, "PotionData cannot be null");
+        getHandle().setType(CraftPotionUtil.fromBukkit(data));
     }
-    
+
     @Override
     public PotionData getBasePotionData() {
-        return CraftPotionUtil.toBukkit(this.getHandle().getType());
+        return CraftPotionUtil.toBukkit(getHandle().getType());
     }
-    
-    @Override
+
     public ProjectileSource getSource() {
-        return this.getHandle().projectileSource;
+        EntityLiving source = getHandle().getSource();
+        return (source == null) ? null : (LivingEntity) source.getBukkitEntity();
     }
-    
-    @Override
-    public void setSource(final ProjectileSource shooter) {
+
+    public void setSource(ProjectileSource shooter) {
         if (shooter instanceof CraftLivingEntity) {
-            this.getHandle().setOwner(((CraftLivingEntity)shooter).getHandle());
+            getHandle().setSource((EntityLiving) ((CraftLivingEntity) shooter).getHandle());
+        } else {
+            getHandle().setSource((EntityLiving) null);
         }
-        else {
-            this.getHandle().setOwner(null);
-        }
-        this.getHandle().projectileSource = shooter;
     }
 }

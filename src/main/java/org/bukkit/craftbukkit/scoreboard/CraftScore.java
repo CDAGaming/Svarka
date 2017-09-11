@@ -1,62 +1,62 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.scoreboard;
 
-import net.minecraft.scoreboard.ScoreObjective;
 import java.util.Map;
-import net.minecraft.scoreboard.Scoreboard;
-import org.bukkit.scoreboard.Objective;
+
+import net.minecraft.server.Scoreboard;
+import net.minecraft.server.ScoreboardObjective;
+import net.minecraft.server.ScoreboardScore;
+
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Score;
 
-final class CraftScore implements Score
-{
+/**
+ * TL;DR: This class is special and lazily grabs a handle...
+ * ...because a handle is a full fledged (I think permanent) hashMap for the associated name.
+ * <p>
+ * Also, as an added perk, a CraftScore will (intentionally) stay a valid reference so long as objective is valid.
+ */
+final class CraftScore implements Score {
     private final String entry;
     private final CraftObjective objective;
-    
-    CraftScore(final CraftObjective objective, final String entry) {
+
+    CraftScore(CraftObjective objective, String entry) {
         this.objective = objective;
         this.entry = entry;
     }
-    
-    @Override
+
     public OfflinePlayer getPlayer() {
-        return Bukkit.getOfflinePlayer(this.entry);
+        return Bukkit.getOfflinePlayer(entry);
     }
-    
-    @Override
+
     public String getEntry() {
-        return this.entry;
+        return entry;
     }
-    
-    @Override
+
     public Objective getObjective() {
-        return this.objective;
+        return objective;
     }
-    
-    @Override
+
     public int getScore() throws IllegalStateException {
-        final Scoreboard board = this.objective.checkState().board;
-        if (board.getObjectiveNames().contains(this.entry)) {
-            final Map<ScoreObjective, net.minecraft.scoreboard.Score> scores = board.getObjectivesForEntity(this.entry);
-            final net.minecraft.scoreboard.Score score = scores.get(this.objective.getHandle());
-            if (score != null) {
-                return score.getScorePoints();
+        Scoreboard board = objective.checkState().board;
+
+        if (board.getPlayers().contains(entry)) { // Lazy
+            Map<ScoreboardObjective, ScoreboardScore> scores = board.getPlayerObjectives(entry);
+            ScoreboardScore score = scores.get(objective.getHandle());
+            if (score != null) { // Lazy
+                return score.getScore();
             }
         }
-        return 0;
+
+        return 0; // Lazy
     }
-    
-    @Override
-    public void setScore(final int score) throws IllegalStateException {
-        this.objective.checkState().board.getOrCreateScore(this.entry, this.objective.getHandle()).setScorePoints(score);
+
+    public void setScore(int score) throws IllegalStateException {
+        objective.checkState().board.getPlayerScoreForObjective(entry, objective.getHandle()).setScore(score);
     }
-    
-    @Override
+
     public CraftScoreboard getScoreboard() {
-        return this.objective.getScoreboard();
+        return objective.getScoreboard();
     }
 }

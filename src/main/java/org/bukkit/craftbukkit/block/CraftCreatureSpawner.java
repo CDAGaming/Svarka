@@ -1,80 +1,60 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.block;
 
-import net.minecraft.tileentity.TileEntity;
-import org.bukkit.entity.EntityType;
+import net.minecraft.server.MinecraftKey;
+import net.minecraft.server.TileEntityMobSpawner;
 import org.bukkit.Material;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.block.Block;
-import net.minecraft.tileentity.TileEntityMobSpawner;
-import org.bukkit.block.CreatureSpawner;
 
-public class CraftCreatureSpawner extends CraftBlockState implements CreatureSpawner
-{
-    private final TileEntityMobSpawner spawner;
-    
+import org.bukkit.block.Block;
+import org.bukkit.block.CreatureSpawner;
+import org.bukkit.entity.EntityType;
+
+public class CraftCreatureSpawner extends CraftBlockEntityState<TileEntityMobSpawner> implements CreatureSpawner {
+
     public CraftCreatureSpawner(final Block block) {
-        super(block);
-        this.spawner = (TileEntityMobSpawner)((CraftWorld)block.getWorld()).getTileEntityAt(this.getX(), this.getY(), this.getZ());
+        super(block, TileEntityMobSpawner.class);
     }
-    
-    public CraftCreatureSpawner(final Material material, final TileEntityMobSpawner te) {
-        super(material);
-        this.spawner = te;
+
+    public CraftCreatureSpawner(final Material material, TileEntityMobSpawner te) {
+        super(material, te);
     }
-    
+
     @Override
     public EntityType getSpawnedType() {
-        return EntityType.fromName(this.spawner.getSpawnerBaseLogic().getEntityNameToSpawn());
+        MinecraftKey key = this.getSnapshot().getSpawner().getMobName();
+        return (key == null) ? EntityType.PIG : EntityType.fromName(key.getKey());
     }
-    
+
     @Override
-    public void setSpawnedType(final EntityType entityType) {
+    public void setSpawnedType(EntityType entityType) {
         if (entityType == null || entityType.getName() == null) {
             throw new IllegalArgumentException("Can't spawn EntityType " + entityType + " from mobspawners!");
         }
-        this.spawner.getSpawnerBaseLogic().setEntityName(entityType.getName());
+
+        this.getSnapshot().getSpawner().setMobName(new MinecraftKey(entityType.getName()));
     }
-    
-    @Deprecated
-    public String getCreatureTypeId() {
-        return this.spawner.getSpawnerBaseLogic().getEntityNameToSpawn();
-    }
-    
-    @Deprecated
-    public void setCreatureTypeId(final String creatureName) {
-        this.setCreatureTypeByName(creatureName);
-    }
-    
+
     @Override
     public String getCreatureTypeName() {
-        return this.spawner.getSpawnerBaseLogic().getEntityNameToSpawn();
+        return this.getSnapshot().getSpawner().getMobName().getKey();
     }
-    
+
     @Override
-    public void setCreatureTypeByName(final String creatureType) {
-        final EntityType type = EntityType.fromName(creatureType);
+    public void setCreatureTypeByName(String creatureType) {
+        // Verify input
+        EntityType type = EntityType.fromName(creatureType);
         if (type == null) {
             return;
         }
-        this.setSpawnedType(type);
+        setSpawnedType(type);
     }
-    
+
     @Override
     public int getDelay() {
-        return this.spawner.getSpawnerBaseLogic().spawnDelay;
+        return this.getSnapshot().getSpawner().spawnDelay;
     }
-    
+
     @Override
-    public void setDelay(final int delay) {
-        this.spawner.getSpawnerBaseLogic().spawnDelay = delay;
-    }
-    
-    @Override
-    public TileEntityMobSpawner getTileEntity() {
-        return this.spawner;
+    public void setDelay(int delay) {
+        this.getSnapshot().getSpawner().spawnDelay = delay;
     }
 }

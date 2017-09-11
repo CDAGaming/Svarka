@@ -1,45 +1,36 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.inventory;
 
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.block.BrewingStand;
-import org.bukkit.inventory.ItemStack;
-import net.minecraft.inventory.IInventory;
-import ru.svarka.inventory.ICBInventory;
-
 import org.bukkit.inventory.BrewerInventory;
+import org.bukkit.inventory.ItemStack;
 
-public class CraftInventoryBrewer extends CraftInventory implements BrewerInventory
-{
-    public CraftInventoryBrewer(final ICBInventory inventory) {
+import net.minecraft.server.IInventory;
+
+public class CraftInventoryBrewer extends CraftInventory implements BrewerInventory {
+    public CraftInventoryBrewer(IInventory inventory) {
         super(inventory);
     }
-    
-    @Override
+
     public ItemStack getIngredient() {
-        return this.getItem(3);
+        return getItem(3);
     }
-    
-    @Override
-    public void setIngredient(final ItemStack ingredient) {
-        this.setItem(3, ingredient);
+
+    public void setIngredient(ItemStack ingredient) {
+        setItem(3, ingredient);
     }
-    
+
     @Override
     public BrewingStand getHolder() {
-        return (BrewingStand)this.inventory.getOwner();
+        return (BrewingStand) inventory.getOwner();
     }
-    
+
     @Override
     public ItemStack getFuel() {
-        return this.getItem(4);
+        return getItem(4);
     }
-    
+
     @Override
-    public void setFuel(final ItemStack fuel) {
-        this.setItem(4, fuel);
+    public void setFuel(ItemStack fuel) {
+        setItem(4, fuel);
     }
 }

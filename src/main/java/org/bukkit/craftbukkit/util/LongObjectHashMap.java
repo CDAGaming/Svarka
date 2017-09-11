@@ -1,397 +1,422 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.util;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
-import java.util.NoSuchElementException;
-import java.util.ConcurrentModificationException;
-import java.io.ObjectInputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.util.HashSet;
-import java.util.Collection;
-import java.util.Set;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.ConcurrentModificationException;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.io.Serializable;
+import java.util.NoSuchElementException;
+import java.util.Set;
 
-public class LongObjectHashMap<V> implements Cloneable, Serializable
-{
+@SuppressWarnings("unchecked")
+public class LongObjectHashMap<V> implements Cloneable, Serializable {
     static final long serialVersionUID = 2841537710170573815L;
+
     private static final long EMPTY_KEY = Long.MIN_VALUE;
-    private static final int BUCKET_SIZE = 4096;
+    private static final int  BUCKET_SIZE = 4096;
+
     private transient long[][] keys;
-    private transient Object[][] values;
-    private transient int modCount;
-    private transient int size;
-    
+    private transient V[][]    values;
+    private transient int      modCount;
+    private transient int      size;
+
     public LongObjectHashMap() {
-        this.initialize();
+        initialize();
     }
-    
-    public LongObjectHashMap(final Map<? extends Long, ? extends V> map) {
+
+    public LongObjectHashMap(Map<? extends Long, ? extends V> map) {
         this();
-        this.putAll(map);
+        putAll(map);
     }
-    
+
     public int size() {
-        return this.size;
+        return size;
     }
-    
+
     public boolean isEmpty() {
-        return this.size == 0;
+        return size == 0;
     }
-    
-    public boolean containsKey(final long key) {
-        return this.get(key) != null;
+
+    public boolean containsKey(long key) {
+        return get(key) != null;
     }
-    
-    public boolean containsValue(final Object value) {
-        for (final V val : this.values()) {
+
+    public boolean containsValue(V value) {
+        for (V val : values()) {
             if (val == value || val.equals(value)) {
                 return true;
             }
         }
+
         return false;
     }
-    
-    public V get(final long key) {
-        final int index = (int)(this.keyIndex(key) & 0xFFFL);
-        final long[] inner = this.keys[index];
-        if (inner == null) {
-            return null;
-        }
-        for (int i = 0; i < inner.length; ++i) {
-            final long innerKey = inner[i];
-            if (innerKey == Long.MIN_VALUE) {
+
+    public V get(long key) {
+        int index = (int) (keyIndex(key) & (BUCKET_SIZE - 1));
+        long[] inner = keys[index];
+        if (inner == null) return null;
+
+        for (int i = 0; i < inner.length; i++) {
+            long innerKey = inner[i];
+            if (innerKey == EMPTY_KEY) {
                 return null;
-            }
-            if (innerKey == key) {
-                return (V)this.values[index][i];
+            } else if (innerKey == key) {
+                return values[index][i];
             }
         }
+
         return null;
     }
-    
-    public V put(final long key, final V value) {
-        final int index = (int)(this.keyIndex(key) & 0xFFFL);
-        long[] innerKeys = this.keys[index];
-        Object[] innerValues = this.values[index];
-        ++this.modCount;
+
+    public V put(long key, V value) {
+        int index = (int) (keyIndex(key) & (BUCKET_SIZE - 1));
+        long[] innerKeys = keys[index];
+        V[] innerValues = values[index];
+        modCount++;
+
         if (innerKeys == null) {
-            innerKeys = (this.keys[index] = new long[8]);
-            Arrays.fill(innerKeys, Long.MIN_VALUE);
-            innerValues = (this.values[index] = (V[]) new Object[8]);
+            // need to make a new chain
+            keys[index] = innerKeys = new long[8];
+            Arrays.fill(innerKeys, EMPTY_KEY);
+            values[index] = innerValues = (V[]) new Object[8];
             innerKeys[0] = key;
             innerValues[0] = value;
-            ++this.size;
-        }
-        else {
+            size++;
+        } else {
             int i;
-            for (i = 0; i < innerKeys.length; ++i) {
-                if (innerKeys[i] == Long.MIN_VALUE) {
-                    ++this.size;
+            for (i = 0; i < innerKeys.length; i++) {
+                // found an empty spot in the chain to put this
+                if (innerKeys[i] == EMPTY_KEY) {
+                    size++;
                     innerKeys[i] = key;
                     innerValues[i] = value;
                     return null;
                 }
+
+                // found an existing entry in the chain with this key, replace it
                 if (innerKeys[i] == key) {
-                    final V oldValue = (V)innerValues[i];
+                    V oldValue = innerValues[i];
                     innerKeys[i] = key;
                     innerValues[i] = value;
                     return oldValue;
                 }
             }
-            innerKeys = (this.keys[index] = Arrays.copyOf(innerKeys, i << 1));
-            Arrays.fill(innerKeys, i, innerKeys.length, Long.MIN_VALUE);
-            innerValues = (this.values[index] = (V[]) Arrays.copyOf(innerValues, i << 1));
+
+            // chain is full, resize it and add our new entry
+            keys[index] = innerKeys = Arrays.copyOf(innerKeys, i << 1);
+            Arrays.fill(innerKeys, i, innerKeys.length, EMPTY_KEY);
+            values[index] = innerValues = Arrays.copyOf(innerValues, i << 1);
             innerKeys[i] = key;
             innerValues[i] = value;
-            ++this.size;
+            size++;
         }
+
         return null;
     }
-    
-    public V remove(final long key) {
-        final int index = (int)(this.keyIndex(key) & 0xFFFL);
-        final long[] inner = this.keys[index];
+
+    public V remove(long key) {
+        int index = (int) (keyIndex(key) & (BUCKET_SIZE - 1));
+        long[] inner = keys[index];
         if (inner == null) {
             return null;
         }
-        for (int i = 0; i < inner.length && inner[i] != Long.MIN_VALUE; ++i) {
+
+        for (int i = 0; i < inner.length; i++) {
+            // hit the end of the chain, didn't find this entry
+            if (inner[i] == EMPTY_KEY) {
+                break;
+            }
+
             if (inner[i] == key) {
-                final V value = (V)this.values[index][i];
-                ++i;
-                while (i < inner.length && inner[i] != Long.MIN_VALUE) {
+                V value = values[index][i];
+
+                for (i++; i < inner.length; i++) {
+                    if (inner[i] == EMPTY_KEY) {
+                        break;
+                    }
+
                     inner[i - 1] = inner[i];
-                    this.values[index][i - 1] = this.values[index][i];
-                    ++i;
+                    values[index][i - 1] = values[index][i];
                 }
-                inner[i - 1] = Long.MIN_VALUE;
-                this.values[index][i - 1] = null;
-                --this.size;
-                ++this.modCount;
+
+                inner[i - 1] = EMPTY_KEY;
+                values[index][i - 1] = null;
+                size--;
+                modCount++;
                 return value;
             }
         }
+
         return null;
     }
-    
-    public void putAll(final Map<? extends Long, ? extends V> map) {
-        for (final java.util.Map.Entry<? extends Long, ? extends V> entry : map.entrySet()) {
-            this.put(entry.getKey(), entry.getValue());
+
+    public void putAll(Map<? extends Long, ? extends V> map) {
+        for (Map.Entry entry : map.entrySet()) {
+            put((Long) entry.getKey(), (V) entry.getValue());
         }
     }
-    
+
     public void clear() {
-        if (this.size == 0) {
+        if (size == 0) {
             return;
         }
-        ++this.modCount;
-        this.size = 0;
-        Arrays.fill(this.keys, null);
-        Arrays.fill(this.values, null);
+
+        modCount++;
+        size = 0;
+        Arrays.fill(keys, null);
+        Arrays.fill(values, null);
     }
-    
+
     public Set<Long> keySet() {
         return new KeySet();
     }
-    
+
     public Collection<V> values() {
         return new ValueCollection();
     }
-    
+
+    /**
+     * Returns a Set of Entry objects for the HashMap. This is not how the internal
+     * implementation is laid out so this constructs the entire Set when called. For
+     * this reason it should be avoided if at all possible.
+     *
+     * @return Set of Entry objects
+     * @deprecated
+     */
     @Deprecated
     public Set<Map.Entry<Long, V>> entrySet() {
-        final HashSet<Map.Entry<Long, V>> set = new HashSet<Map.Entry<Long, V>>();
-        for (final long key : this.keySet()) {
-            set.add(new Entry(key, this.get(key)));
+        HashSet<Map.Entry<Long, V>> set = new HashSet<Map.Entry<Long, V>>();
+        for (long key : keySet()) {
+            set.add(new Entry(key, get(key)));
         }
+
         return set;
     }
-    
+
     public Object clone() throws CloneNotSupportedException {
-        final LongObjectHashMap clone = (LongObjectHashMap)super.clone();
+        LongObjectHashMap clone = (LongObjectHashMap) super.clone();
+        // Make sure we clear any existing information from the clone
         clone.clear();
+        // Make sure the clone is properly setup for new entries
         clone.initialize();
-        for (final long key : this.keySet()) {
-            final V value = this.get(key);
+
+        // Iterate through the data normally to do a safe clone
+        for (long key : keySet()) {
+            final V value = get(key);
             clone.put(key, value);
         }
+
         return clone;
     }
-    
+
     private void initialize() {
-        this.keys = new long[4096][];
-        this.values = new Object[4096][];
+        keys = new long[BUCKET_SIZE][];
+        values = (V[][]) new Object[BUCKET_SIZE][];
     }
-    
+
     private long keyIndex(long key) {
         key ^= key >>> 33;
-        key *= -49064778989728563L;
+        key *= 0xff51afd7ed558ccdL;
         key ^= key >>> 33;
-        key *= -4265267296055464877L;
+        key *= 0xc4ceb9fe1a85ec53L;
         key ^= key >>> 33;
         return key;
     }
-    
-    private void writeObject(final ObjectOutputStream outputStream) throws IOException {
+
+    private void writeObject(ObjectOutputStream outputStream) throws IOException {
         outputStream.defaultWriteObject();
-        for (final long key : this.keySet()) {
-            final V value = this.get(key);
+
+        for (long key : keySet()) {
+            V value = get(key);
             outputStream.writeLong(key);
             outputStream.writeObject(value);
         }
-        outputStream.writeLong(Long.MIN_VALUE);
+
+        outputStream.writeLong(EMPTY_KEY);
         outputStream.writeObject(null);
     }
-    
-    private void readObject(final ObjectInputStream inputStream) throws ClassNotFoundException, IOException {
+
+    private void readObject(ObjectInputStream inputStream) throws ClassNotFoundException, IOException {
         inputStream.defaultReadObject();
-        this.initialize();
+        initialize();
+
         while (true) {
-            final long key = inputStream.readLong();
-            final V value = (V)inputStream.readObject();
-            if (key == Long.MIN_VALUE && value == null) {
+            long key = inputStream.readLong();
+            V value = (V) inputStream.readObject();
+            if (key == EMPTY_KEY && value == null) {
                 break;
             }
-            this.put(key, value);
+
+            put(key, value);
         }
     }
-    
-    private class Entry implements Map.Entry<Long, V>
-    {
-        private final Long key;
-        private V value;
-        
-        Entry(final long k, final V v) {
-            this.key = k;
-            this.value = v;
-        }
-        
-        @Override
-        public Long getKey() {
-            return this.key;
-        }
-        
-        @Override
-        public V getValue() {
-            return this.value;
-        }
-        
-        @Override
-        public V setValue(final V v) {
-            final V old = this.value;
-            this.value = v;
-            LongObjectHashMap.this.put(this.key, v);
-            return old;
-        }
-    }
-    
-    private class KeyIterator implements Iterator<Long>
-    {
-        final ValueIterator iterator;
-        
-        public KeyIterator() {
-            this.iterator = new ValueIterator();
-        }
-        
-        @Override
-        public void remove() {
-            this.iterator.remove();
-        }
-        
-        @Override
-        public boolean hasNext() {
-            return this.iterator.hasNext();
-        }
-        
-        @Override
-        public Long next() {
-            this.iterator.next();
-            return this.iterator.prevKey;
-        }
-    }
-    
-    private class ValueIterator implements Iterator<V>
-    {
+
+
+    private class ValueIterator implements Iterator<V> {
         private int count;
         private int index;
         private int innerIndex;
         private int expectedModCount;
-        private long lastReturned;
-        long prevKey;
+        private long lastReturned = EMPTY_KEY;
+
+        long prevKey = EMPTY_KEY;
         V prevValue;
-        
+
         ValueIterator() {
-            this.lastReturned = Long.MIN_VALUE;
-            this.prevKey = Long.MIN_VALUE;
-            this.expectedModCount = LongObjectHashMap.this.modCount;
+            expectedModCount = LongObjectHashMap.this.modCount;
         }
-        
-        @Override
+
         public boolean hasNext() {
-            return this.count < LongObjectHashMap.this.size;
+            return count < LongObjectHashMap.this.size;
         }
-        
-        @Override
+
         public void remove() {
-            if (LongObjectHashMap.this.modCount != this.expectedModCount) {
+            if (LongObjectHashMap.this.modCount != expectedModCount) {
                 throw new ConcurrentModificationException();
             }
-            if (this.lastReturned == Long.MIN_VALUE) {
+
+            if (lastReturned == EMPTY_KEY) {
                 throw new IllegalStateException();
             }
-            --this.count;
-            LongObjectHashMap.this.remove(this.lastReturned);
-            this.lastReturned = Long.MIN_VALUE;
-            this.expectedModCount = LongObjectHashMap.this.modCount;
+
+            count--;
+            LongObjectHashMap.this.remove(lastReturned);
+            lastReturned = EMPTY_KEY;
+            expectedModCount = LongObjectHashMap.this.modCount;
         }
-        
-        @Override
+
         public V next() {
-            if (LongObjectHashMap.this.modCount != this.expectedModCount) {
+            if (LongObjectHashMap.this.modCount != expectedModCount) {
                 throw new ConcurrentModificationException();
             }
-            if (!this.hasNext()) {
+
+            if (!hasNext()) {
                 throw new NoSuchElementException();
             }
-            final long[][] keys = LongObjectHashMap.this.keys;
-            ++this.count;
-            if (this.prevKey != Long.MIN_VALUE) {
-                ++this.innerIndex;
+
+            long[][] keys = LongObjectHashMap.this.keys;
+            count++;
+
+            if (prevKey != EMPTY_KEY) {
+                innerIndex++;
             }
-            while (this.index < keys.length) {
-                if (keys[this.index] != null) {
-                    if (this.innerIndex < keys[this.index].length) {
-                        final long key = keys[this.index][this.innerIndex];
-                        final V value = (V)LongObjectHashMap.this.values[this.index][this.innerIndex];
-                        if (key != Long.MIN_VALUE) {
-                            this.lastReturned = key;
-                            this.prevKey = key;
-                            return this.prevValue = value;
+
+            for (; index < keys.length; index++) {
+                if (keys[index] != null) {
+                    for (; innerIndex < keys[index].length; innerIndex++) {
+                        long key = keys[index][innerIndex];
+                        V value = values[index][innerIndex];
+                        if (key == EMPTY_KEY) {
+                            break;
                         }
+
+                        lastReturned = key;
+                        prevKey = key;
+                        prevValue = value;
+                        return prevValue;
                     }
-                    this.innerIndex = 0;
+                    innerIndex = 0;
                 }
-                ++this.index;
             }
+
             throw new NoSuchElementException();
         }
     }
-    
-    private class KeySet extends AbstractSet<Long>
-    {
-        @Override
+
+    private class KeyIterator implements Iterator<Long> {
+        final ValueIterator iterator;
+
+        public KeyIterator() {
+            iterator = new ValueIterator();
+        }
+
+        public void remove() {
+            iterator.remove();
+        }
+
+        public boolean hasNext() {
+            return iterator.hasNext();
+        }
+
+        public Long next() {
+            iterator.next();
+            return iterator.prevKey;
+        }
+    }
+
+
+    private class KeySet extends AbstractSet<Long> {
         public void clear() {
             LongObjectHashMap.this.clear();
         }
-        
-        @Override
+
         public int size() {
             return LongObjectHashMap.this.size();
         }
-        
-        @Override
-        public boolean contains(final Object key) {
-            return key instanceof Long && LongObjectHashMap.this.containsKey((Long)key);
+
+        public boolean contains(Object key) {
+            return key instanceof Long && LongObjectHashMap.this.containsKey((Long) key);
+
         }
-        
-        @Override
-        public boolean remove(final Object key) {
-            return LongObjectHashMap.this.remove((Long)key) != null;
+
+        public boolean remove(Object key) {
+            return LongObjectHashMap.this.remove((Long) key) != null;
         }
-        
-        @Override
+
         public Iterator<Long> iterator() {
             return new KeyIterator();
         }
     }
-    
-    private class ValueCollection extends AbstractCollection<V>
-    {
-        @Override
+
+
+    private class ValueCollection extends AbstractCollection<V> {
         public void clear() {
             LongObjectHashMap.this.clear();
         }
-        
-        @Override
+
         public int size() {
             return LongObjectHashMap.this.size();
         }
-        
-        @Override
-        public boolean contains(final Object value) {
-            return LongObjectHashMap.this.containsValue(value);
+
+        public boolean contains(Object value) {
+            return LongObjectHashMap.this.containsValue((V) value);
         }
-        
-        @Override
+
         public Iterator<V> iterator() {
             return new ValueIterator();
+        }
+    }
+
+
+    private class Entry implements Map.Entry<Long, V> {
+        private final Long key;
+        private V value;
+
+        Entry(long k, V v) {
+            key = k;
+            value = v;
+        }
+
+        public Long getKey() {
+            return key;
+        }
+
+        public V getValue() {
+            return value;
+        }
+
+        public V setValue(V v) {
+            V old = value;
+            value = v;
+            put(key, v);
+            return old;
         }
     }
 }

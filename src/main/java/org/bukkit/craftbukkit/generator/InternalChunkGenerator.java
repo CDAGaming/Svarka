@@ -1,12 +1,8 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.generator;
 
-import net.minecraft.world.chunk.IChunkGenerator;
+import net.minecraft.server.IChunkProvider;
 import org.bukkit.generator.ChunkGenerator;
 
-public abstract class InternalChunkGenerator extends ChunkGenerator implements IChunkGenerator
-{
+// Do not implement functions to this class, add to NormalChunkGenerator
+public abstract class InternalChunkGenerator extends ChunkGenerator implements net.minecraft.server.ChunkGenerator {
 }

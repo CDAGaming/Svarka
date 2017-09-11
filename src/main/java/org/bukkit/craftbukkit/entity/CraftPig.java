@@ -1,42 +1,33 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import org.bukkit.entity.EntityType;
-import net.minecraft.entity.passive.EntityAnimal;
-import net.minecraft.entity.passive.EntityPig;
+import net.minecraft.server.EntityPig;
+
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Pig;
 
-public class CraftPig extends CraftAnimals implements Pig
-{
-    public CraftPig(final CraftServer server, final EntityPig entity) {
+public class CraftPig extends CraftAnimals implements Pig {
+    public CraftPig(CraftServer server, EntityPig entity) {
         super(server, entity);
     }
-    
-    @Override
+
     public boolean hasSaddle() {
-        return this.getHandle().getSaddled();
+        return getHandle().hasSaddle();
     }
-    
-    @Override
-    public void setSaddle(final boolean saddled) {
-        this.getHandle().setSaddled(saddled);
+
+    public void setSaddle(boolean saddled) {
+        getHandle().setSaddle(saddled);
     }
-    
-    @Override
+
     public EntityPig getHandle() {
-        return (EntityPig)this.entity;
+        return (EntityPig) entity;
     }
-    
+
     @Override
     public String toString() {
         return "CraftPig";
     }
-    
-    @Override
+
     public EntityType getType() {
         return EntityType.PIG;
     }

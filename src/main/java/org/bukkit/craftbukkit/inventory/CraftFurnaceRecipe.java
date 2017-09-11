@@ -1,30 +1,26 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.inventory;
 
-import net.minecraft.item.crafting.FurnaceRecipes;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.FurnaceRecipe;
+import net.minecraft.server.RecipesFurnace;
 
-public class CraftFurnaceRecipe extends FurnaceRecipe implements CraftRecipe
-{
-    public CraftFurnaceRecipe(final ItemStack result, final ItemStack source) {
+import org.bukkit.inventory.FurnaceRecipe;
+import org.bukkit.inventory.ItemStack;
+
+public class CraftFurnaceRecipe extends FurnaceRecipe implements CraftRecipe {
+    public CraftFurnaceRecipe(ItemStack result, ItemStack source) {
         super(result, source.getType(), source.getDurability());
     }
-    
-    public static CraftFurnaceRecipe fromBukkitRecipe(final FurnaceRecipe recipe) {
+
+    public static CraftFurnaceRecipe fromBukkitRecipe(FurnaceRecipe recipe) {
         if (recipe instanceof CraftFurnaceRecipe) {
-            return (CraftFurnaceRecipe)recipe;
+            return (CraftFurnaceRecipe) recipe;
         }
         return new CraftFurnaceRecipe(recipe.getResult(), recipe.getInput());
     }
-    
+
     @Override
     public void addToCraftingManager() {
-        final ItemStack result = this.getResult();
-        final ItemStack input = this.getInput();
-        FurnaceRecipes.instance().registerRecipe(CraftItemStack.asNMSCopy(input), CraftItemStack.asNMSCopy(result), this.getExperience());
+        ItemStack result = this.getResult();
+        ItemStack input = this.getInput();
+        RecipesFurnace.getInstance().registerRecipe(CraftItemStack.asNMSCopy(input), CraftItemStack.asNMSCopy(result), getExperience());
     }
 }

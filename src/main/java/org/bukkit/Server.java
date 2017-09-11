@@ -29,6 +29,7 @@ import org.bukkit.help.HelpMap;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.map.MapView;
 import org.bukkit.permissions.Permissible;
@@ -40,8 +41,8 @@ import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.util.CachedServerIcon;
 
-import com.avaje.ebean.config.ServerConfig;
 import com.google.common.collect.ImmutableList;
+import org.bukkit.advancement.Advancement;
 import org.bukkit.generator.ChunkGenerator;
 
 import org.bukkit.inventory.ItemFactory;
@@ -88,19 +89,6 @@ public interface Server extends PluginMessageRecipient {
      * @return version of Bukkit
      */
     public String getBukkitVersion();
-
-    /**
-     * Gets an array copy of all currently logged in players.
-     * <p>
-     * This method exists for legacy reasons to provide backwards
-     * compatibility. It will not exist at runtime and should not be used
-     * under any circumstances.
-     *
-     * @deprecated superseded by {@link #getOnlinePlayers()}
-     * @return an array of Players that are currently online
-     */
-    @Deprecated
-    public Player[] _INVALID_getOnlinePlayers();
 
     /**
      * Gets a view of all currently logged in players. This {@linkplain
@@ -453,6 +441,12 @@ public interface Server extends PluginMessageRecipient {
     public void reload();
 
     /**
+     * Reload only the Minecraft data for the server. This includes custom
+     * advancements and loot tables.
+     */
+    public void reloadData();
+
+    /**
      * Returns the primary logger associated with this server instance.
      *
      * @return Logger associated with this server
@@ -483,14 +477,6 @@ public interface Server extends PluginMessageRecipient {
      *     fails with an unhandled exception
      */
     public boolean dispatchCommand(CommandSender sender, String commandLine) throws CommandException;
-
-    /**
-     * Populates a given {@link ServerConfig} with values attributes to this
-     * server.
-     *
-     * @param config the server config to populate
-     */
-    public void configureDbConfig(ServerConfig config);
 
     /**
      * Adds a recipe to the crafting manager.
@@ -568,23 +554,6 @@ public interface Server extends PluginMessageRecipient {
      * @return true if the server mode is hardcore, false otherwise
      */
     public boolean isHardcore();
-
-    /**
-     * Gets whether to use vanilla (false) or exact behaviour (true).
-     *
-     * <ul>
-     * <li>Vanilla behaviour: check for collisions and move the player if
-     *     needed.
-     * <li>Exact behaviour: spawn players exactly where they should be.
-     * </ul>
-     *
-     * @return true if exact location locations are used for spawning, false
-     *     for vanilla collision detection or otherwise
-     *
-     * @deprecated non standard and unused feature.
-     */
-    @Deprecated
-    public boolean useExactLoginLocation();
 
     /**
      * Shutdowns the server, stopping everything.
@@ -779,6 +748,15 @@ public interface Server extends PluginMessageRecipient {
     Inventory createInventory(InventoryHolder owner, int size, String title) throws IllegalArgumentException;
 
     /**
+     * Creates an empty merchant.
+     *
+     * @param title the title of the corresponding merchant inventory, displayed
+     * when the merchant inventory is viewed
+     * @return a new merchant
+     */
+    Merchant createMerchant(String title);
+
+    /**
      * Gets user-specified limit for number of monsters that can spawn in a
      * chunk.
      *
@@ -940,7 +918,31 @@ public interface Server extends PluginMessageRecipient {
      * @param flags an optional list of flags to set on the boss bar
      * @return the created boss bar
      */
-    BossBar createBossBar(String title, BarColor color, BarStyle style, BarFlag ...flags);
+    BossBar createBossBar(String title, BarColor color, BarStyle style, BarFlag... flags);
+
+    /**
+     * Gets an entity on the server by its UUID
+     *
+     * @param uuid the UUID of the entity
+     * @return the entity with the given UUID, or null if it isn't found
+     */
+    Entity getEntity(UUID uuid);
+
+    /**
+     * Get the advancement specified by this key.
+     *
+     * @param key unique advancement key
+     * @return advancement or null if not exists
+     */
+    Advancement getAdvancement(NamespacedKey key);
+
+    /**
+     * Get an iterator through all advancements. Advancements cannot be removed
+     * from this iterator,
+     *
+     * @return an advancement iterator
+     */
+    Iterator<Advancement> advancementIterator();
 
     /**
      * @see UnsafeValues

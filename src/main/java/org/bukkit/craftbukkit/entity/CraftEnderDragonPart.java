@@ -1,106 +1,87 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import org.bukkit.entity.ComplexLivingEntity;
-import org.bukkit.util.NumberConversions;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EnderDragon;
-import net.minecraft.entity.boss.EntityDragonPart;
+import net.minecraft.server.EntityComplexPart;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.EnderDragon;
 import org.bukkit.entity.EnderDragonPart;
+import org.bukkit.entity.Entity;
+import org.bukkit.util.NumberConversions;
 
-public class CraftEnderDragonPart extends CraftComplexPart implements EnderDragonPart
-{
-    public CraftEnderDragonPart(final CraftServer server, final EntityDragonPart entity) {
+public class CraftEnderDragonPart extends CraftComplexPart implements EnderDragonPart {
+    public CraftEnderDragonPart(CraftServer server, EntityComplexPart entity) {
         super(server, entity);
     }
-    
+
     @Override
     public EnderDragon getParent() {
-        return (EnderDragon)super.getParent();
+        return (EnderDragon) super.getParent();
     }
-    
+
     @Override
-    public EntityDragonPart getHandle() {
-        return (EntityDragonPart)this.entity;
+    public EntityComplexPart getHandle() {
+        return (EntityComplexPart) entity;
     }
-    
+
     @Override
     public String toString() {
         return "CraftEnderDragonPart";
     }
-    
-    @Override
-    public void damage(final double amount) {
-        this.getParent().damage(amount);
+
+    public void damage(double amount) {
+        getParent().damage(amount);
     }
-    
-    @Override
-    public void damage(final double amount, final Entity source) {
-        this.getParent().damage(amount, source);
+
+    public void damage(double amount, Entity source) {
+        getParent().damage(amount, source);
     }
-    
-    @Override
+
     public double getHealth() {
-        return this.getParent().getHealth();
+        return getParent().getHealth();
     }
-    
-    @Override
-    public void setHealth(final double health) {
-        this.getParent().setHealth(health);
+
+    public void setHealth(double health) {
+        getParent().setHealth(health);
     }
-    
-    @Override
+
     public double getMaxHealth() {
-        return this.getParent().getMaxHealth();
+        return getParent().getMaxHealth();
     }
-    
-    @Override
-    public void setMaxHealth(final double health) {
-        this.getParent().setMaxHealth(health);
+
+    public void setMaxHealth(double health) {
+        getParent().setMaxHealth(health);
     }
-    
-    @Override
+
     public void resetMaxHealth() {
-        this.getParent().resetMaxHealth();
+        getParent().resetMaxHealth();
     }
-    
+
     @Deprecated
-    @Override
-    public void _INVALID_damage(final int amount) {
-        this.damage(amount);
+    public void _INVALID_damage(int amount) {
+        damage(amount);
     }
-    
+
     @Deprecated
-    @Override
-    public void _INVALID_damage(final int amount, final Entity source) {
-        this.damage(amount, source);
+    public void _INVALID_damage(int amount, Entity source) {
+        damage(amount, source);
     }
-    
+
     @Deprecated
-    @Override
     public int _INVALID_getHealth() {
-        return NumberConversions.ceil(this.getHealth());
+        return NumberConversions.ceil(getHealth());
     }
-    
+
     @Deprecated
-    @Override
-    public void _INVALID_setHealth(final int health) {
-        this.setHealth(health);
+    public void _INVALID_setHealth(int health) {
+        setHealth(health);
     }
-    
+
     @Deprecated
-    @Override
     public int _INVALID_getMaxHealth() {
-        return NumberConversions.ceil(this.getMaxHealth());
+        return NumberConversions.ceil(getMaxHealth());
     }
-    
+
     @Deprecated
-    @Override
-    public void _INVALID_setMaxHealth(final int health) {
-        this.setMaxHealth(health);
+    public void _INVALID_setMaxHealth(int health) {
+        setMaxHealth(health);
     }
 }

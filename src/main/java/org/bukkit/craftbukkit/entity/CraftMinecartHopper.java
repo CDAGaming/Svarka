@@ -1,49 +1,41 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import org.bukkit.inventory.Inventory;
-import org.bukkit.entity.EntityType;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.entity.item.EntityMinecart;
-import net.minecraft.entity.item.EntityMinecartHopper;
+import net.minecraft.server.EntityMinecartHopper;
+
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.minecart.HopperMinecart;
+import org.bukkit.inventory.Inventory;
 
-final class CraftMinecartHopper extends CraftMinecart implements HopperMinecart
-{
+final class CraftMinecartHopper extends CraftMinecart implements HopperMinecart {
     private final CraftInventory inventory;
-    
-    CraftMinecartHopper(final CraftServer server, final EntityMinecartHopper entity) {
+
+    CraftMinecartHopper(CraftServer server, EntityMinecartHopper entity) {
         super(server, entity);
-        this.inventory = new CraftInventory(entity);
+        inventory = new CraftInventory(entity);
     }
-    
+
     @Override
     public String toString() {
-        return "CraftMinecartHopper{inventory=" + this.inventory + '}';
+        return "CraftMinecartHopper{" + "inventory=" + inventory + '}';
     }
-    
-    @Override
+
     public EntityType getType() {
         return EntityType.MINECART_HOPPER;
     }
-    
-    @Override
+
     public Inventory getInventory() {
-        return this.inventory;
+        return inventory;
     }
-    
+
     @Override
     public boolean isEnabled() {
-        return ((EntityMinecartHopper)this.getHandle()).getBlocked();
+        return ((EntityMinecartHopper) getHandle()).isEnabled();
     }
-    
+
     @Override
-    public void setEnabled(final boolean enabled) {
-        ((EntityMinecartHopper)this.getHandle()).setBlocked(enabled);
+    public void setEnabled(boolean enabled) {
+        ((EntityMinecartHopper) getHandle()).setEnabled(enabled);
     }
 }

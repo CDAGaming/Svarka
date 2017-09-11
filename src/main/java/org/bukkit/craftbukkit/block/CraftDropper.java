@@ -1,65 +1,50 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.block;
 
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.world.World;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.init.Blocks;
-import net.minecraft.block.BlockDropper;
-import net.minecraft.inventory.IInventory;
-import org.bukkit.craftbukkit.inventory.CraftInventory;
-import org.bukkit.inventory.Inventory;
+import net.minecraft.server.BlockDropper;
+import net.minecraft.server.BlockPosition;
+import net.minecraft.server.Blocks;
+import net.minecraft.server.TileEntityDropper;
+
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import net.minecraft.tileentity.TileEntityDropper;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.block.Dropper;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.inventory.CraftInventory;
+import org.bukkit.inventory.Inventory;
 
-public class CraftDropper extends CraftBlockState implements Dropper
-{
-    private final CraftWorld world;
-    private final TileEntityDropper dropper;
-    
+public class CraftDropper extends CraftLootable<TileEntityDropper> implements Dropper {
+
     public CraftDropper(final Block block) {
-        super(block);
-        this.world = (CraftWorld)block.getWorld();
-        this.dropper = (TileEntityDropper)this.world.getTileEntityAt(this.getX(), this.getY(), this.getZ());
+        super(block, TileEntityDropper.class);
     }
-    
-    public CraftDropper(final Material material, final TileEntityDropper te) {
-        super(material);
-        this.world = null;
-        this.dropper = te;
+
+    public CraftDropper(final Material material, TileEntityDropper te) {
+        super(material, te);
     }
-    
+
+    @Override
+    public Inventory getSnapshotInventory() {
+        return new CraftInventory(this.getSnapshot());
+    }
+
     @Override
     public Inventory getInventory() {
-        return new CraftInventory(this.dropper);
+        if (!this.isPlaced()) {
+            return this.getSnapshotInventory();
+        }
+
+        return new CraftInventory(this.getTileEntity());
     }
-    
+
     @Override
     public void drop() {
-        final Block block = this.getBlock();
+        Block block = getBlock();
+
         if (block.getType() == Material.DROPPER) {
-            final BlockDropper drop = (BlockDropper)Blocks.DROPPER;
-            drop.dispense(this.world.getHandle(), new BlockPos(this.getX(), this.getY(), this.getZ()));
+            CraftWorld world = (CraftWorld) this.getWorld();
+            BlockDropper drop = (BlockDropper) Blocks.DROPPER;
+
+            drop.dispense(world.getHandle(), new BlockPosition(getX(), getY(), getZ()));
         }
-    }
-    
-    @Override
-    public boolean update(final boolean force, final boolean applyPhysics) {
-        final boolean result = super.update(force, applyPhysics);
-        if (result) {
-            this.dropper.markDirty();
-        }
-        return result;
-    }
-    
-    @Override
-    public TileEntityDropper getTileEntity() {
-        return this.dropper;
     }
 }

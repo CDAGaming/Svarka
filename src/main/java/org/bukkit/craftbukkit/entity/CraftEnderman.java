@@ -1,47 +1,39 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import org.bukkit.entity.EntityType;
-import net.minecraft.block.state.IBlockState;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
-import org.bukkit.Material;
-import org.bukkit.material.MaterialData;
-import net.minecraft.entity.monster.EntityMob;
-import net.minecraft.entity.monster.EntityEnderman;
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.Enderman;
+import net.minecraft.server.EntityEnderman;
 
-public class CraftEnderman extends CraftMonster implements Enderman
-{
-    public CraftEnderman(final CraftServer server, final EntityEnderman entity) {
+import net.minecraft.server.IBlockData;
+import org.bukkit.Material;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.entity.Enderman;
+import org.bukkit.entity.EntityType;
+import org.bukkit.material.MaterialData;
+
+public class CraftEnderman extends CraftMonster implements Enderman {
+    public CraftEnderman(CraftServer server, EntityEnderman entity) {
         super(server, entity);
     }
-    
-    @Override
+
     public MaterialData getCarriedMaterial() {
-        final IBlockState blockData = this.getHandle().getHeldBlockState();
-        return (blockData == null) ? Material.AIR.getNewData((byte)0) : CraftMagicNumbers.getMaterial(blockData.getBlock()).getNewData((byte)blockData.getBlock().getMetaFromState(blockData));
+        IBlockData blockData = getHandle().getCarried();
+        return (blockData == null) ? Material.AIR.getNewData((byte) 0) : CraftMagicNumbers.getMaterial(blockData.getBlock()).getNewData((byte) blockData.getBlock().toLegacyData(blockData));
     }
-    
-    @Override
-    public void setCarriedMaterial(final MaterialData data) {
-        this.getHandle().setHeldBlockState(CraftMagicNumbers.getBlock(data.getItemTypeId()).getStateFromMeta(data.getData()));
+
+    public void setCarriedMaterial(MaterialData data) {
+        getHandle().setCarried(CraftMagicNumbers.getBlock(data.getItemTypeId()).fromLegacyData(data.getData()));
     }
-    
+
     @Override
     public EntityEnderman getHandle() {
-        return (EntityEnderman)this.entity;
+        return (EntityEnderman) entity;
     }
-    
+
     @Override
     public String toString() {
         return "CraftEnderman";
     }
-    
-    @Override
+
     public EntityType getType() {
         return EntityType.ENDERMAN;
     }

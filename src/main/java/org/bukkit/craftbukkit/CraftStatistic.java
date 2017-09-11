@@ -1,70 +1,44 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit;
 
-import net.minecraft.block.Block;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.item.Item;
-import net.minecraft.entity.EntityList;
-import org.bukkit.entity.EntityType;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
-import org.bukkit.Material;
-import net.minecraft.stats.StatList;
-import net.minecraft.stats.StatBase;
-import java.util.Map;
-import com.google.common.base.CaseFormat;
-import com.google.common.collect.ImmutableBiMap;
-import com.google.common.collect.ImmutableMap;
-import org.bukkit.Achievement;
-import org.bukkit.Statistic;
-import com.google.common.collect.BiMap;
+import net.minecraft.server.EntityTypes;
+import net.minecraft.server.EntityTypes.MonsterEggInfo;
+import net.minecraft.server.StatisticList;
 
-public class CraftStatistic
-{
-    private static final BiMap<String, Statistic> statistics;
-    private static final BiMap<String, Achievement> achievements;
-    
+import org.bukkit.Statistic;
+import org.bukkit.Material;
+import org.bukkit.entity.EntityType;
+
+import com.google.common.base.CaseFormat;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.ImmutableBiMap;
+import net.minecraft.server.Block;
+import net.minecraft.server.Item;
+import net.minecraft.server.MinecraftKey;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+
+public class CraftStatistic {
+    private static final BiMap<String, org.bukkit.Statistic> statistics;
+
     static {
-        final ImmutableMap<Object, Object> specialCases = /*(ImmutableMap<String, Achievement>)*/ImmutableMap.builder().put("achievement.buildWorkBench", Achievement.BUILD_WORKBENCH).put("achievement.diamonds", Achievement.GET_DIAMONDS).put("achievement.portal", Achievement.NETHER_PORTAL).put("achievement.ghast", Achievement.GHAST_RETURN).put("achievement.theEnd", Achievement.END_PORTAL).put("achievement.theEnd2", Achievement.THE_END).put("achievement.blazeRod", Achievement.GET_BLAZE_ROD).put("achievement.potion", Achievement.BREW_POTION).build();
-        final ImmutableBiMap.Builder<String, Statistic> statisticBuilder = /*(ImmutableBiMap.Builder<String, Statistic>)*/ImmutableBiMap.builder();
-        final ImmutableBiMap.Builder<String, Achievement> achievementBuilder = /*(ImmutableBiMap.Builder<String, Achievement>)*/ImmutableBiMap.builder();
-        Statistic[] values;
-        for (int length = (values = Statistic.values()).length, i = 0; i < length; ++i) {
-            final Statistic statistic = values[i];
+        ImmutableBiMap.Builder<String, org.bukkit.Statistic> statisticBuilder = ImmutableBiMap.<String, org.bukkit.Statistic>builder();
+        for (Statistic statistic : Statistic.values()) {
             if (statistic == Statistic.PLAY_ONE_TICK) {
                 statisticBuilder.put("stat.playOneMinute", statistic);
-            }
-            else {
-                statisticBuilder.put(("stat." + CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, statistic.name())), statistic);
-            }
-        }
-        Achievement[] values2;
-        for (int length2 = (values2 = Achievement.values()).length, j = 0; j < length2; ++j) {
-            final Achievement achievement = values2[j];
-            if (!specialCases.values().contains((Object)achievement)) {
-                achievementBuilder.put(("achievement." + CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, achievement.name())), achievement);
+            } else {
+                statisticBuilder.put("stat." + CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, statistic.name()), statistic);
             }
         }
-        achievementBuilder.putAll((Map)specialCases);
-        statistics = (BiMap)statisticBuilder.build();
-        achievements = (BiMap)achievementBuilder.build();
+
+        statistics = statisticBuilder.build();
     }
-    
-    public static Achievement getBukkitAchievement(final net.minecraft.stats.Achievement achievement) {
-        return getBukkitAchievementByName(achievement.statId);
+
+    private CraftStatistic() {}
+
+    public static org.bukkit.Statistic getBukkitStatistic(net.minecraft.server.Statistic statistic) {
+        return getBukkitStatisticByName(statistic.name);
     }
-    
-    public static Achievement getBukkitAchievementByName(final String name) {
-        return (Achievement)CraftStatistic.achievements.get((Object)name);
-    }
-    
-    public static Statistic getBukkitStatistic(final StatBase statistic) {
-        return getBukkitStatisticByName(statistic.statId);
-    }
-    
-    public static Statistic getBukkitStatisticByName(String name) {
+
+    public static org.bukkit.Statistic getBukkitStatisticByName(String name) {
         if (name.startsWith("stat.killEntity.")) {
             name = "stat.killEntity";
         }
@@ -89,74 +63,72 @@ public class CraftStatistic
         if (name.startsWith("stat.pickup.")) {
             name = "stat.pickup";
         }
-        return (Statistic)CraftStatistic.statistics.get((Object)name);
+        return statistics.get(name);
     }
-    
-    public static StatBase getNMSStatistic(final Statistic statistic) {
-        return StatList.getOneShotStat((String)CraftStatistic.statistics.inverse().get((Object)statistic));
+
+    public static net.minecraft.server.Statistic getNMSStatistic(org.bukkit.Statistic statistic) {
+        return StatisticList.getStatistic(statistics.inverse().get(statistic));
     }
-    
-    public static net.minecraft.stats.Achievement getNMSAchievement(final Achievement achievement) {
-        return (net.minecraft.stats.Achievement)StatList.getOneShotStat((String)CraftStatistic.achievements.inverse().get((Object)achievement));
-    }
-    
-    public static StatBase getMaterialStatistic(final Statistic stat, final Material material) {
+
+    public static net.minecraft.server.Statistic getMaterialStatistic(org.bukkit.Statistic stat, Material material) {
         try {
             if (stat == Statistic.MINE_BLOCK) {
-                return StatList.getBlockStats(CraftMagicNumbers.getBlock(material));
+                return StatisticList.a(CraftMagicNumbers.getBlock(material)); // PAIL: getMineBlockStatistic
             }
             if (stat == Statistic.CRAFT_ITEM) {
-                return StatList.getCraftStats(CraftMagicNumbers.getItem(material));
+                return StatisticList.a(CraftMagicNumbers.getItem(material)); // PAIL: getCraftItemStatistic
             }
             if (stat == Statistic.USE_ITEM) {
-                return StatList.getObjectUseStats(CraftMagicNumbers.getItem(material));
+                return StatisticList.b(CraftMagicNumbers.getItem(material)); // PAIL: getUseItemStatistic
             }
             if (stat == Statistic.BREAK_ITEM) {
-                return StatList.getObjectBreakStats(CraftMagicNumbers.getItem(material));
+                return StatisticList.c(CraftMagicNumbers.getItem(material)); // PAIL: getBreakItemStatistic
+            }
+            if (stat == Statistic.PICKUP) {
+                return StatisticList.d(CraftMagicNumbers.getItem(material)); // PAIL: getPickupStatistic
             }
             if (stat == Statistic.DROP) {
-                return StatList.getDroppedObjectStats(CraftMagicNumbers.getItem(material));
+                return StatisticList.e(CraftMagicNumbers.getItem(material)); // PAIL: getDropItemStatistic
             }
-        }
-        catch (ArrayIndexOutOfBoundsException ex) {
+        } catch (ArrayIndexOutOfBoundsException e) {
             return null;
         }
         return null;
     }
-    
-    public static StatBase getEntityStatistic(final Statistic stat, final EntityType entity) {
-        final EntityList.EntityEggInfo monsteregginfo = EntityList.ENTITY_EGGS.get(entity.getName());
+
+    public static net.minecraft.server.Statistic getEntityStatistic(org.bukkit.Statistic stat, EntityType entity) {
+        MonsterEggInfo monsteregginfo = (MonsterEggInfo) EntityTypes.eggInfo.get(new MinecraftKey(entity.getName()));
+
         if (monsteregginfo != null) {
-            if (stat == Statistic.KILL_ENTITY) {
-                return monsteregginfo.killEntityStat;
+            if (stat == org.bukkit.Statistic.KILL_ENTITY) {
+                return monsteregginfo.killEntityStatistic;
             }
-            if (stat == Statistic.ENTITY_KILLED_BY) {
-                return monsteregginfo.entityKilledByStat;
+            if (stat == org.bukkit.Statistic.ENTITY_KILLED_BY) {
+                return monsteregginfo.killedByEntityStatistic;
             }
         }
         return null;
     }
-    
-    public static EntityType getEntityTypeFromStatistic(final StatBase statistic) {
-        final String statisticString = statistic.statId;
+
+    public static EntityType getEntityTypeFromStatistic(net.minecraft.server.Statistic statistic) {
+        String statisticString = statistic.name;
         return EntityType.fromName(statisticString.substring(statisticString.lastIndexOf(".") + 1));
     }
-    
-    public static Material getMaterialFromStatistic(final StatBase statistic) {
-        final String statisticString = statistic.statId;
-        final String val = statisticString.substring(statisticString.lastIndexOf(".") + 1);
-        final Item item = Item.REGISTRY.getObject(new ResourceLocation(val));
+
+    public static Material getMaterialFromStatistic(net.minecraft.server.Statistic statistic) {
+        String statisticString = statistic.name;
+        String val = statisticString.substring(statisticString.lastIndexOf(".") + 1);
+        Item item = (Item) Item.REGISTRY.get(new MinecraftKey(val));
         if (item != null) {
-            return Material.getMaterial(Item.getIdFromItem(item));
+            return Material.getMaterial(Item.getId(item));
         }
-        final Block block = Block.REGISTRY.getObject(new ResourceLocation(val));
+        Block block = (Block) Block.REGISTRY.get(new MinecraftKey(val));
         if (block != null) {
-            return Material.getMaterial(Block.getIdFromBlock(block));
+            return Material.getMaterial(Block.getId(block));
         }
         try {
             return Material.getMaterial(Integer.parseInt(val));
-        }
-        catch (NumberFormatException ex) {
+        } catch (NumberFormatException e) {
             return null;
         }
     }

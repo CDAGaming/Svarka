@@ -1,32 +1,27 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.inventory;
 
-import org.bukkit.inventory.MerchantRecipe;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.InventoryMerchant;
+import net.minecraft.server.InventoryMerchant;
 import org.bukkit.inventory.MerchantInventory;
+import org.bukkit.inventory.MerchantRecipe;
 
-public class CraftInventoryMerchant extends CraftInventory implements MerchantInventory
-{
-    public CraftInventoryMerchant(final InventoryMerchant merchant) {
+public class CraftInventoryMerchant extends CraftInventory implements MerchantInventory {
+
+    public CraftInventoryMerchant(InventoryMerchant merchant) {
         super(merchant);
     }
-    
+
     @Override
     public int getSelectedRecipeIndex() {
-        return this.getInventory().currentRecipeIndex;
+        return getInventory().selectedIndex;
     }
-    
+
     @Override
     public MerchantRecipe getSelectedRecipe() {
-        return this.getInventory().getCurrentRecipe().asBukkit();
+        return getInventory().getRecipe().asBukkit();
     }
-    
+
     @Override
     public InventoryMerchant getInventory() {
-        return (InventoryMerchant)this.inventory;
+        return (InventoryMerchant) inventory;
     }
 }

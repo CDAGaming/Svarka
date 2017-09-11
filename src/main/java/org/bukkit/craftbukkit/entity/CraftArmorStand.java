@@ -1,210 +1,214 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.util.math.Rotations;
-import org.bukkit.util.EulerAngle;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.entity.EntityType;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.item.EntityArmorStand;
+import net.minecraft.server.EntityArmorStand;
+import net.minecraft.server.Vector3f;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.EntityType;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.EulerAngle;
 
-public class CraftArmorStand extends CraftLivingEntity implements ArmorStand
-{
-    public CraftArmorStand(final CraftServer server, final EntityArmorStand entity) {
+public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
+
+    public CraftArmorStand(CraftServer server, EntityArmorStand entity) {
         super(server, entity);
     }
-    
+
     @Override
     public String toString() {
         return "CraftArmorStand";
     }
-    
+
     @Override
     public EntityType getType() {
         return EntityType.ARMOR_STAND;
     }
-    
+
     @Override
     public EntityArmorStand getHandle() {
-        return (EntityArmorStand)super.getHandle();
+        return (EntityArmorStand) super.getHandle();
     }
-    
+
     @Override
     public ItemStack getItemInHand() {
-        return this.getEquipment().getItemInHand();
+        return getEquipment().getItemInHand();
     }
-    
+
     @Override
-    public void setItemInHand(final ItemStack item) {
-        this.getEquipment().setItemInHand(item);
+    public void setItemInHand(ItemStack item) {
+        getEquipment().setItemInHand(item);
     }
-    
+
     @Override
     public ItemStack getBoots() {
-        return this.getEquipment().getBoots();
+        return getEquipment().getBoots();
     }
-    
+
     @Override
-    public void setBoots(final ItemStack item) {
-        this.getEquipment().setBoots(item);
+    public void setBoots(ItemStack item) {
+        getEquipment().setBoots(item);
     }
-    
+
     @Override
     public ItemStack getLeggings() {
-        return this.getEquipment().getLeggings();
+        return getEquipment().getLeggings();
     }
-    
+
     @Override
-    public void setLeggings(final ItemStack item) {
-        this.getEquipment().setLeggings(item);
+    public void setLeggings(ItemStack item) {
+        getEquipment().setLeggings(item);
     }
-    
+
     @Override
     public ItemStack getChestplate() {
-        return this.getEquipment().getChestplate();
+        return getEquipment().getChestplate();
     }
-    
+
     @Override
-    public void setChestplate(final ItemStack item) {
-        this.getEquipment().setChestplate(item);
+    public void setChestplate(ItemStack item) {
+        getEquipment().setChestplate(item);
     }
-    
+
     @Override
     public ItemStack getHelmet() {
-        return this.getEquipment().getHelmet();
+        return getEquipment().getHelmet();
     }
-    
+
     @Override
-    public void setHelmet(final ItemStack item) {
-        this.getEquipment().setHelmet(item);
+    public void setHelmet(ItemStack item) {
+        getEquipment().setHelmet(item);
     }
-    
+
     @Override
     public EulerAngle getBodyPose() {
-        return fromNMS(this.getHandle().bodyRotation);
+        return fromNMS(getHandle().bodyPose);
     }
-    
+
     @Override
-    public void setBodyPose(final EulerAngle pose) {
-        this.getHandle().setBodyRotation(toNMS(pose));
+    public void setBodyPose(EulerAngle pose) {
+        getHandle().setBodyPose(toNMS(pose));
     }
-    
+
     @Override
     public EulerAngle getLeftArmPose() {
-        return fromNMS(this.getHandle().leftArmRotation);
+        return fromNMS(getHandle().leftArmPose);
     }
-    
+
     @Override
-    public void setLeftArmPose(final EulerAngle pose) {
-        this.getHandle().setLeftArmRotation(toNMS(pose));
+    public void setLeftArmPose(EulerAngle pose) {
+        getHandle().setLeftArmPose(toNMS(pose));
     }
-    
+
     @Override
     public EulerAngle getRightArmPose() {
-        return fromNMS(this.getHandle().rightArmRotation);
+        return fromNMS(getHandle().rightArmPose);
     }
-    
+
     @Override
-    public void setRightArmPose(final EulerAngle pose) {
-        this.getHandle().setRightArmRotation(toNMS(pose));
+    public void setRightArmPose(EulerAngle pose) {
+        getHandle().setRightArmPose(toNMS(pose));
     }
-    
+
     @Override
     public EulerAngle getLeftLegPose() {
-        return fromNMS(this.getHandle().leftLegRotation);
+        return fromNMS(getHandle().leftLegPose);
     }
-    
+
     @Override
-    public void setLeftLegPose(final EulerAngle pose) {
-        this.getHandle().setLeftLegRotation(toNMS(pose));
+    public void setLeftLegPose(EulerAngle pose) {
+        getHandle().setLeftLegPose(toNMS(pose));
     }
-    
+
     @Override
     public EulerAngle getRightLegPose() {
-        return fromNMS(this.getHandle().rightLegRotation);
+        return fromNMS(getHandle().rightLegPose);
     }
-    
+
     @Override
-    public void setRightLegPose(final EulerAngle pose) {
-        this.getHandle().setRightLegRotation(toNMS(pose));
+    public void setRightLegPose(EulerAngle pose) {
+        getHandle().setRightLegPose(toNMS(pose));
     }
-    
+
     @Override
     public EulerAngle getHeadPose() {
-        return fromNMS(this.getHandle().headRotation);
+        return fromNMS(getHandle().headPose);
     }
-    
+
     @Override
-    public void setHeadPose(final EulerAngle pose) {
-        this.getHandle().setHeadRotation(toNMS(pose));
+    public void setHeadPose(EulerAngle pose) {
+        getHandle().setHeadPose(toNMS(pose));
     }
-    
+
     @Override
     public boolean hasBasePlate() {
-        return !this.getHandle().hasNoBasePlate();
+        return !getHandle().hasBasePlate();
     }
-    
+
     @Override
-    public void setBasePlate(final boolean basePlate) {
-        this.getHandle().setNoBasePlate(!basePlate);
+    public void setBasePlate(boolean basePlate) {
+        getHandle().setBasePlate(!basePlate);
     }
-    
+
     @Override
-    public void setGravity(final boolean gravity) {
+    public void setGravity(boolean gravity) {
         super.setGravity(gravity);
-        this.getHandle().noClip = !gravity;
+        // Armor stands are special
+        getHandle().noclip = !gravity;
     }
-    
+
     @Override
     public boolean isVisible() {
-        return !this.getHandle().isInvisible();
+        return !getHandle().isInvisible();
     }
-    
+
     @Override
-    public void setVisible(final boolean visible) {
-        this.getHandle().setInvisible(!visible);
+    public void setVisible(boolean visible) {
+        getHandle().setInvisible(!visible);
     }
-    
+
     @Override
     public boolean hasArms() {
-        return this.getHandle().getShowArms();
+        return getHandle().hasArms();
     }
-    
+
     @Override
-    public void setArms(final boolean arms) {
-        this.getHandle().setShowArms(arms);
+    public void setArms(boolean arms) {
+        getHandle().setArms(arms);
     }
-    
+
     @Override
     public boolean isSmall() {
-        return this.getHandle().isSmall();
+        return getHandle().isSmall();
     }
-    
+
     @Override
-    public void setSmall(final boolean small) {
-        this.getHandle().setSmall(small);
+    public void setSmall(boolean small) {
+        getHandle().setSmall(small);
     }
-    
-    private static EulerAngle fromNMS(final Rotations old) {
-        return new EulerAngle(Math.toRadians(old.getX()), Math.toRadians(old.getY()), Math.toRadians(old.getZ()));
+
+    private static EulerAngle fromNMS(Vector3f old) {
+        return new EulerAngle(
+            Math.toRadians(old.getX()),
+            Math.toRadians(old.getY()),
+            Math.toRadians(old.getZ())
+        );
     }
-    
-    private static Rotations toNMS(final EulerAngle old) {
-        return new Rotations((float)Math.toDegrees(old.getX()), (float)Math.toDegrees(old.getY()), (float)Math.toDegrees(old.getZ()));
+
+    private static Vector3f toNMS(EulerAngle old) {
+        return new Vector3f(
+            (float) Math.toDegrees(old.getX()),
+            (float) Math.toDegrees(old.getY()),
+            (float) Math.toDegrees(old.getZ())
+        );
     }
-    
+
     @Override
     public boolean isMarker() {
-        return this.getHandle().hasMarker();
+        return getHandle().isMarker();
     }
-    
+
     @Override
-    public void setMarker(final boolean marker) {
-        this.getHandle().setMarker(marker);
+    public void setMarker(boolean marker) {
+        getHandle().setMarker(marker);
     }
 }

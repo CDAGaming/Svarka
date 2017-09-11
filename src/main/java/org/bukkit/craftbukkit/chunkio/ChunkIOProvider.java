@@ -1,66 +1,62 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.chunkio;
 
-import net.minecraft.world.chunk.IChunkProvider;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.chunk.storage.AnvilChunkLoader;
 import java.io.IOException;
-import net.minecraft.nbt.NBTTagCompound;
-import java.util.concurrent.atomic.AtomicInteger;
-import net.minecraft.world.chunk.Chunk;
+import net.minecraft.server.Chunk;
+import net.minecraft.server.ChunkCoordIntPair;
+import net.minecraft.server.ChunkRegionLoader;
+import net.minecraft.server.NBTTagCompound;
+
+import org.bukkit.Server;
 import org.bukkit.craftbukkit.util.AsynchronousExecutor;
 
-class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChunk, Chunk, Runnable, RuntimeException>
-{
-    private final AtomicInteger threadNumber;
-    
-    ChunkIOProvider() {
-        this.threadNumber = new AtomicInteger(1);
-    }
-    
-    @Override
-    public Chunk callStage1(final QueuedChunk queuedChunk) throws RuntimeException {
+import java.util.concurrent.atomic.AtomicInteger;
+
+class ChunkIOProvider implements AsynchronousExecutor.CallBackProvider<QueuedChunk, Chunk, Runnable, RuntimeException> {
+    private final AtomicInteger threadNumber = new AtomicInteger(1);
+
+    // async stuff
+    public Chunk callStage1(QueuedChunk queuedChunk) throws RuntimeException {
         try {
-            final AnvilChunkLoader loader = queuedChunk.loader;
-            final Object[] data = loader.loadChunk__Async(queuedChunk.world, queuedChunk.x, queuedChunk.z);
+            ChunkRegionLoader loader = queuedChunk.loader;
+            Object[] data = loader.loadChunk(queuedChunk.world, queuedChunk.x, queuedChunk.z);
+            
             if (data != null) {
-                queuedChunk.compound = (NBTTagCompound)data[1];
-                return (Chunk)data[0];
+                queuedChunk.compound = (NBTTagCompound) data[1];
+                return (Chunk) data[0];
             }
+
             return null;
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
     }
-    
-    @Override
-    public void callStage2(final QueuedChunk queuedChunk, final Chunk chunk) throws RuntimeException {
+
+    // sync stuff
+    public void callStage2(QueuedChunk queuedChunk, Chunk chunk) throws RuntimeException {
         if (chunk == null) {
-            queuedChunk.provider.getLoadedChunk(queuedChunk.x, queuedChunk.z);
+            // If the chunk loading failed just do it synchronously (may generate)
+            queuedChunk.provider.originalGetChunkAt(queuedChunk.x, queuedChunk.z);
             return;
         }
-        queuedChunk.loader.loadEntities(queuedChunk.world, queuedChunk.compound.getCompoundTag("Level"), chunk);
-        chunk.setLastSaveTime(queuedChunk.provider.worldObj.getTotalWorldTime());
-        queuedChunk.provider.id2ChunkMap.put(ChunkPos.chunkXZ2Int(queuedChunk.x, queuedChunk.z), /*(Object)*/chunk);
-        chunk.onChunkLoad();
+
+        queuedChunk.loader.loadEntities(chunk, queuedChunk.compound.getCompound("Level"), queuedChunk.world);
+        chunk.setLastSaved(queuedChunk.provider.world.getTime());
+        queuedChunk.provider.chunks.put(ChunkCoordIntPair.a(queuedChunk.x, queuedChunk.z), chunk);
+        chunk.addEntities();
+
         if (queuedChunk.provider.chunkGenerator != null) {
             queuedChunk.provider.chunkGenerator.recreateStructures(chunk, queuedChunk.x, queuedChunk.z);
         }
+
         chunk.loadNearby(queuedChunk.provider, queuedChunk.provider.chunkGenerator, false);
     }
-    
-    @Override
-    public void callStage3(final QueuedChunk queuedChunk, final Chunk chunk, final Runnable runnable) throws RuntimeException {
+
+    public void callStage3(QueuedChunk queuedChunk, Chunk chunk, Runnable runnable) throws RuntimeException {
         runnable.run();
     }
-    
-    @Override
-    public Thread newThread(final Runnable runnable) {
-        final Thread thread = new Thread(runnable, "Chunk I/O Executor Thread-" + this.threadNumber.getAndIncrement());
+
+    public Thread newThread(Runnable runnable) {
+        Thread thread = new Thread(runnable, "Chunk I/O Executor Thread-" + threadNumber.getAndIncrement());
         thread.setDaemon(true);
         return thread;
     }

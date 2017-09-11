@@ -1,32 +1,25 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import org.bukkit.entity.EntityType;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.effect.EntityWeatherEffect;
+import net.minecraft.server.EntityWeather;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Weather;
 
-public class CraftWeather extends CraftEntity implements Weather
-{
-    public CraftWeather(final CraftServer server, final EntityWeatherEffect entity) {
+public class CraftWeather extends CraftEntity implements Weather {
+    public CraftWeather(final CraftServer server, final EntityWeather entity) {
         super(server, entity);
     }
-    
+
     @Override
-    public EntityWeatherEffect getHandle() {
-        return (EntityWeatherEffect)this.entity;
+    public EntityWeather getHandle() {
+        return (EntityWeather) entity;
     }
-    
+
     @Override
     public String toString() {
         return "CraftWeather";
     }
-    
-    @Override
+
     public EntityType getType() {
         return EntityType.WEATHER;
     }

@@ -1,79 +1,65 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.entity.EntityCreature;
-import net.minecraft.entity.EntityAgeable;
+import net.minecraft.server.EntityAgeable;
+
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Ageable;
 
-public class CraftAgeable extends CraftCreature implements Ageable
-{
-    public CraftAgeable(final CraftServer server, final EntityAgeable entity) {
+public class CraftAgeable extends CraftCreature implements Ageable {
+    public CraftAgeable(CraftServer server, EntityAgeable entity) {
         super(server, entity);
     }
-    
-    @Override
+
     public int getAge() {
-        return this.getHandle().getGrowingAge();
+        return getHandle().getAge();
     }
-    
-    @Override
-    public void setAge(final int age) {
-        this.getHandle().setGrowingAge(age);
+
+    public void setAge(int age) {
+        getHandle().setAgeRaw(age);
     }
-    
-    @Override
-    public void setAgeLock(final boolean lock) {
-        this.getHandle().ageLocked = lock;
+
+    public void setAgeLock(boolean lock) {
+        getHandle().ageLocked = lock;
     }
-    
-    @Override
+
     public boolean getAgeLock() {
-        return this.getHandle().ageLocked;
+        return getHandle().ageLocked;
     }
-    
-    @Override
+
     public void setBaby() {
-        if (this.isAdult()) {
-            this.setAge(-24000);
+        if (isAdult()) {
+            setAge(-24000);
         }
     }
-    
-    @Override
+
     public void setAdult() {
-        if (!this.isAdult()) {
-            this.setAge(0);
+        if (!isAdult()) {
+            setAge(0);
         }
     }
-    
-    @Override
+
     public boolean isAdult() {
-        return this.getAge() >= 0;
+        return getAge() >= 0;
     }
-    
-    @Override
+
+
     public boolean canBreed() {
-        return this.getAge() == 0;
+        return getAge() == 0;
     }
-    
-    @Override
-    public void setBreed(final boolean breed) {
+
+    public void setBreed(boolean breed) {
         if (breed) {
-            this.setAge(0);
-        }
-        else if (this.isAdult()) {
-            this.setAge(6000);
+            setAge(0);
+        } else if (isAdult()) {
+            setAge(6000);
         }
     }
-    
+
     @Override
     public EntityAgeable getHandle() {
-        return (EntityAgeable)this.entity;
+        return (EntityAgeable) entity;
     }
-    
+
     @Override
     public String toString() {
         return "CraftAgeable";

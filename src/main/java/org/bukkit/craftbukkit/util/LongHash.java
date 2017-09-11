@@ -1,20 +1,15 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.util;
 
-public class LongHash
-{
-    public static long toLong(final int msw, final int lsw) {
-        return (msw << 32) + lsw + 2147483648L;
+public class LongHash {
+    public static long toLong(int msw, int lsw) {
+        return ((long) msw << 32) + lsw - Integer.MIN_VALUE;
     }
-    
-    public static int msw(final long l) {
-        return (int)(l >> 32);
+
+    public static int msw(long l) {
+        return (int) (l >> 32);
     }
-    
-    public static int lsw(final long l) {
-        return (int)(l & -1L) + Integer.MIN_VALUE;
+
+    public static int lsw(long l) {
+        return (int) (l & 0xFFFFFFFF) + Integer.MIN_VALUE;
     }
 }

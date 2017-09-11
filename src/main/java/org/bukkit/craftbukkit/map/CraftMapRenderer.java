@@ -1,46 +1,49 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.map;
 
-import java.util.Iterator;
-import org.bukkit.map.MapCursorCollection;
-import net.minecraft.util.math.Vec4b;
+import net.minecraft.server.WorldMap;
+import net.minecraft.server.MapIcon;
+
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.map.MapCanvas;
-import org.bukkit.map.MapView;
-import net.minecraft.world.storage.MapData;
+import org.bukkit.map.MapCursorCollection;
 import org.bukkit.map.MapRenderer;
+import org.bukkit.map.MapView;
 
-public class CraftMapRenderer extends MapRenderer
-{
-    private final MapData worldMap;
-    
-    public CraftMapRenderer(final CraftMapView mapView, final MapData worldMap) {
+public class CraftMapRenderer extends MapRenderer {
+
+    private final WorldMap worldMap;
+
+    public CraftMapRenderer(CraftMapView mapView, WorldMap worldMap) {
         super(false);
         this.worldMap = worldMap;
     }
-    
+
     @Override
-    public void render(final MapView map, final MapCanvas canvas, final Player player) {
+    public void render(MapView map, MapCanvas canvas, Player player) {
+        // Map
         for (int x = 0; x < 128; ++x) {
             for (int y = 0; y < 128; ++y) {
-                canvas.setPixel(x, y, this.worldMap.colors[y * 128 + x]);
+                canvas.setPixel(x, y, worldMap.colors[y * 128 + x]);
             }
         }
-        final MapCursorCollection cursors = canvas.getCursors();
+
+        // Cursors
+        MapCursorCollection cursors = canvas.getCursors();
         while (cursors.size() > 0) {
             cursors.removeCursor(cursors.getCursor(0));
         }
-        for (final Object key : this.worldMap.mapDecorations.keySet()) {
-            final Player other = Bukkit.getPlayerExact((String)key);
+
+        for (Object key : worldMap.decorations.keySet()) {
+            // If this cursor is for a player check visibility with vanish system
+            Player other = Bukkit.getPlayerExact((String) key);
             if (other != null && !player.canSee(other)) {
                 continue;
             }
-            final Vec4b decoration = this.worldMap.mapDecorations.get(key);
-            cursors.addCursor(decoration.getX(), decoration.getY(), (byte)(decoration.getRotation() & 0xF), decoration.getType());
+
+            MapIcon decoration = (MapIcon) worldMap.decorations.get(key);
+            cursors.addCursor(decoration.getX(), decoration.getY(), (byte) (decoration.getRotation() & 15), decoration.getType());
         }
     }
+
 }

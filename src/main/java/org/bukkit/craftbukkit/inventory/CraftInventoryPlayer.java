@@ -1,280 +1,270 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.inventory;
 
-import org.bukkit.inventory.InventoryHolder;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.HumanEntity;
 import com.google.common.base.Preconditions;
-import net.minecraft.network.play.server.SPacketHeldItemChange;
-import org.apache.commons.lang.Validate;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.network.Packet;
-import net.minecraft.network.play.server.SPacketSetSlot;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
-import java.util.Arrays;
-import org.bukkit.inventory.ItemStack;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.entity.player.InventoryPlayer;
-import org.bukkit.inventory.EntityEquipment;
-import org.bukkit.inventory.PlayerInventory;
+import net.minecraft.server.EntityPlayer;
+import net.minecraft.server.PacketPlayOutHeldItemSlot;
+import net.minecraft.server.PacketPlayOutSetSlot;
+import net.minecraft.server.PlayerInventory;
 
-public class CraftInventoryPlayer extends CraftInventory implements PlayerInventory, EntityEquipment
-{
-    public CraftInventoryPlayer(final InventoryPlayer inventory) {
+import org.apache.commons.lang.Validate;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.entity.HumanEntity;
+import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.inventory.ItemStack;
+
+public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.inventory.PlayerInventory, EntityEquipment {
+    public CraftInventoryPlayer(net.minecraft.server.PlayerInventory inventory) {
         super(inventory);
     }
-    
+
     @Override
-    public InventoryPlayer getInventory() {
-        return (InventoryPlayer)this.inventory;
+    public PlayerInventory getInventory() {
+        return (PlayerInventory) inventory;
     }
-    
+
     @Override
     public ItemStack[] getStorageContents() {
-        return Arrays.copyOfRange(this.getContents(), 0, this.getInventory().mainInventory.length);
+        return asCraftMirror(getInventory().items);
     }
-    
+
     @Override
     public ItemStack getItemInMainHand() {
-        return CraftItemStack.asCraftMirror(this.getInventory().getCurrentItem());
+        return CraftItemStack.asCraftMirror(getInventory().getItemInHand());
     }
-    
+
     @Override
-    public void setItemInMainHand(final ItemStack item) {
-        this.setItem(this.getHeldItemSlot(), item);
+    public void setItemInMainHand(ItemStack item) {
+        setItem(getHeldItemSlot(), item);
     }
-    
+
     @Override
     public ItemStack getItemInOffHand() {
-        return CraftItemStack.asCraftMirror(this.getInventory().offHandInventory[0]);
+        return CraftItemStack.asCraftMirror(getInventory().extraSlots.get(0));
     }
-    
+
     @Override
-    public void setItemInOffHand(final ItemStack item) {
-        final ItemStack[] extra = this.getExtraContents();
+    public void setItemInOffHand(ItemStack item) {
+        ItemStack[] extra = getExtraContents();
         extra[0] = item;
-        this.setExtraContents(extra);
+        setExtraContents(extra);
     }
-    
+
     @Override
     public ItemStack getItemInHand() {
-        return this.getItemInMainHand();
+        return getItemInMainHand();
     }
-    
+
     @Override
-    public void setItemInHand(final ItemStack stack) {
-        this.setItemInMainHand(stack);
+    public void setItemInHand(ItemStack stack) {
+        setItemInMainHand(stack);
     }
-    
+
     @Override
-    public void setItem(int index, final ItemStack item) {
+    public void setItem(int index, ItemStack item) {
         super.setItem(index, item);
-        if (this.getHolder() == null) {
-            return;
-        }
-        final EntityPlayerMP player = ((CraftPlayer)this.getHolder()).getHandle();
-        if (player.connection == null) {
-            return;
-        }
-        if (index < InventoryPlayer.getHotbarSize()) {
+        if (this.getHolder() == null) return;
+        EntityPlayer player = ((CraftPlayer) this.getHolder()).getHandle();
+        if (player.playerConnection == null) return;
+        // PacketPlayOutSetSlot places the items differently than setItem()
+        //
+        // Between, and including, index 9 (the first index outside of the hotbar) and index 35 (the last index before
+        // armor slots) both PacketPlayOutSetSlot and setItem() places the items in the player's inventory the same way.
+        // Index 9 starts at the upper left corner of the inventory and moves to the right as it increases. When it
+        // reaches the end of the line it goes back to the left side of the new line in the inventory. Basically, it
+        // follows the path your eyes would follow as you read a book.
+        //
+        // The player's hotbar is indexed 0-8 in setItem(). The order goes: 0-8 hotbar, 9-35 normal inventory, 36 boots,
+        // 37 leggings, 38 chestplate, and 39 helmet. For indexes > 39 an ArrayIndexOutOfBoundsException will be thrown.
+        //
+        // PacketPlayOutSetSlot works very differently. Slots 0-8 are as follows: 0 crafting output, 1-4 crafting input,
+        // 5 helmet, 6 chestplate, 7 leggings, and 8 boots. Then, 9-35 work exactly the same as setItem(). The hotbar
+        // for PacketPlayOutSetSlot starts at index 36, and continues to index 44. Items placed where index is < 0 or
+        // > 44 have no action. Basically, the upper part of the player's inventory (crafting area and armor slots) is
+        // the first "row" of 9 slots for PacketPlayOutSetSlot. From there the rows work as normal, from left to right
+        // all the way down, including the hotbar.
+        //
+        // With this in mind, we have to modify the index we give PacketPlayOutSetSlot to match the index we intended
+        // with setItem(). First, if the index is 0-8, we need to add 36, or 4 rows worth of slots, to the index. This
+        // will push the item down to the correct spot in the hotbar.
+        //
+        // Now when index is > 35 (if index > 39 an ArrayIndexOutOfBoundsException will be thrown, so we need not worry
+        // about it) then we need to reset the index, and then count backwards  from the "top" of the inventory. That is
+        // to say, we first find (index - 36), which will give us the index required for the armor slots. Now, we need
+        // to reverse the order of the index from 8. That means we need 0 to correspond to 8, 1 to correspond to 7,
+        // 2 to correspond to 6, and 3 to correspond to 5. We do this simply by taking the result of (index - 36) and
+        // subtracting that value from 8.
+        if (index < PlayerInventory.getHotbarSize()) {
             index += 36;
-        }
-        else if (index > 39) {
-            index += 5;
-        }
-        else if (index > 35) {
+        } else if (index > 39) {
+            index += 5; // Off hand
+        } else if (index > 35) {
             index = 8 - (index - 36);
         }
-        player.connection.sendPacket(new SPacketSetSlot(player.inventoryContainer.windowId, index, CraftItemStack.asNMSCopy(item)));
+        player.playerConnection.sendPacket(new PacketPlayOutSetSlot(player.defaultContainer.windowId, index, CraftItemStack.asNMSCopy(item)));
     }
-    
-    @Override
+
     public int getHeldItemSlot() {
-        return this.getInventory().currentItem;
+        return getInventory().itemInHandIndex;
     }
-    
-    @Override
-    public void setHeldItemSlot(final int slot) {
-        Validate.isTrue(slot >= 0 && slot < InventoryPlayer.getHotbarSize(), "Slot is not between 0 and 8 inclusive");
-        this.getInventory().currentItem = slot;
-        ((CraftPlayer)this.getHolder()).getHandle().connection.sendPacket(new SPacketHeldItemChange(slot));
+
+    public void setHeldItemSlot(int slot) {
+        Validate.isTrue(slot >= 0 && slot < PlayerInventory.getHotbarSize(), "Slot is not between 0 and 8 inclusive");
+        this.getInventory().itemInHandIndex = slot;
+        ((CraftPlayer) this.getHolder()).getHandle().playerConnection.sendPacket(new PacketPlayOutHeldItemSlot(slot));
     }
-    
-    @Override
+
     public ItemStack getHelmet() {
-        return this.getItem(this.getSize() - 2);
+        return getItem(getSize() - 2);
     }
-    
-    @Override
+
     public ItemStack getChestplate() {
-        return this.getItem(this.getSize() - 3);
+        return getItem(getSize() - 3);
     }
-    
-    @Override
+
     public ItemStack getLeggings() {
-        return this.getItem(this.getSize() - 4);
+        return getItem(getSize() - 4);
     }
-    
-    @Override
+
     public ItemStack getBoots() {
-        return this.getItem(this.getSize() - 5);
+        return getItem(getSize() - 5);
     }
-    
-    @Override
-    public void setHelmet(final ItemStack helmet) {
-        this.setItem(this.getSize() - 2, helmet);
+
+    public void setHelmet(ItemStack helmet) {
+        setItem(getSize() - 2, helmet);
     }
-    
-    @Override
-    public void setChestplate(final ItemStack chestplate) {
-        this.setItem(this.getSize() - 3, chestplate);
+
+    public void setChestplate(ItemStack chestplate) {
+        setItem(getSize() - 3, chestplate);
     }
-    
-    @Override
-    public void setLeggings(final ItemStack leggings) {
-        this.setItem(this.getSize() - 4, leggings);
+
+    public void setLeggings(ItemStack leggings) {
+        setItem(getSize() - 4, leggings);
     }
-    
-    @Override
-    public void setBoots(final ItemStack boots) {
-        this.setItem(this.getSize() - 5, boots);
+
+    public void setBoots(ItemStack boots) {
+        setItem(getSize() - 5, boots);
     }
-    
-    @Override
+
     public ItemStack[] getArmorContents() {
-        final int start = this.getInventory().mainInventory.length;
-        return Arrays.copyOfRange(this.getContents(), start, start + this.getInventory().armorInventory.length);
+        return asCraftMirror(getInventory().armor);
     }
-    
-    private void setSlots(ItemStack[] items, final int baseSlot, final int length) {
+
+    private void setSlots(ItemStack[] items, int baseSlot, int length) {
         if (items == null) {
             items = new ItemStack[length];
         }
-        Preconditions.checkArgument(items.length <= length, "items.length must be < %s", new Object[] { length });
-        for (int i = 0; i < length; ++i) {
+        Preconditions.checkArgument(items.length <= length, "items.length must be < %s", length);
+
+        for (int i = 0; i < length; i++) {
             if (i >= items.length) {
-                this.setItem(baseSlot + i, null);
-            }
-            else {
-                this.setItem(baseSlot + i, items[i]);
+                setItem(baseSlot + i, null);
+            } else {
+                setItem(baseSlot + i, items[i]);
             }
         }
     }
-    
+
     @Override
-    public void setStorageContents(final ItemStack[] items) throws IllegalArgumentException {
-        this.setSlots(items, 0, this.getInventory().mainInventory.length);
+    public void setStorageContents(ItemStack[] items) throws IllegalArgumentException {
+        setSlots(items, 0, getInventory().items.size());
     }
-    
+
     @Override
-    public void setArmorContents(final ItemStack[] items) {
-        this.setSlots(items, this.getInventory().mainInventory.length, this.getInventory().armorInventory.length);
+    public void setArmorContents(ItemStack[] items) {
+        setSlots(items, getInventory().items.size(), getInventory().armor.size());
     }
-    
+
     @Override
     public ItemStack[] getExtraContents() {
-        final int start = this.getInventory().mainInventory.length + this.getInventory().armorInventory.length;
-        return Arrays.copyOfRange(this.getContents(), start, start + this.getInventory().offHandInventory.length);
+        return asCraftMirror(getInventory().extraSlots);
     }
-    
+
     @Override
-    public void setExtraContents(final ItemStack[] items) {
-        this.setSlots(items, this.getInventory().mainInventory.length + this.getInventory().armorInventory.length, this.getInventory().offHandInventory.length);
+    public void setExtraContents(ItemStack[] items) {
+        setSlots(items, getInventory().items.size() + getInventory().armor.size(), getInventory().extraSlots.size());
     }
-    
-    @Override
-    public int clear(final int id, final int data) {
+
+    public int clear(int id, int data) {
         int count = 0;
-        final ItemStack[] items = this.getContents();
-        for (int i = 0; i < items.length; ++i) {
-            final ItemStack item = items[i];
-            if (item != null) {
-                if (id <= -1 || item.getTypeId() == id) {
-                    if (data <= -1 || item.getData().getData() == data) {
-                        count += item.getAmount();
-                        this.setItem(i, null);
-                    }
-                }
-            }
+        ItemStack[] items = getContents();
+
+        for (int i = 0; i < items.length; i++) {
+            ItemStack item = items[i];
+            if (item == null) continue;
+            if (id > -1 && item.getTypeId() != id) continue;
+            if (data > -1 && item.getData().getData() != data) continue;
+
+            count += item.getAmount();
+            setItem(i, null);
         }
+
         return count;
     }
-    
+
     @Override
     public HumanEntity getHolder() {
-        return (HumanEntity)this.inventory.getOwner();
+        return (HumanEntity) inventory.getOwner();
     }
-    
+
     @Override
     public float getItemInHandDropChance() {
-        return this.getItemInMainHandDropChance();
+        return getItemInMainHandDropChance();
     }
-    
+
     @Override
-    public void setItemInHandDropChance(final float chance) {
-        this.setItemInMainHandDropChance(chance);
+    public void setItemInHandDropChance(float chance) {
+        setItemInMainHandDropChance(chance);
     }
-    
+
     @Override
     public float getItemInMainHandDropChance() {
-        return 1.0f;
+        return 1;
     }
-    
+
     @Override
-    public void setItemInMainHandDropChance(final float chance) {
+    public void setItemInMainHandDropChance(float chance) {
         throw new UnsupportedOperationException();
     }
-    
+
     @Override
     public float getItemInOffHandDropChance() {
-        return 1.0f;
+        return 1;
     }
-    
+
     @Override
-    public void setItemInOffHandDropChance(final float chance) {
+    public void setItemInOffHandDropChance(float chance) {
         throw new UnsupportedOperationException();
     }
-    
-    @Override
+
     public float getHelmetDropChance() {
-        return 1.0f;
+        return 1;
     }
-    
-    @Override
-    public void setHelmetDropChance(final float chance) {
+
+    public void setHelmetDropChance(float chance) {
         throw new UnsupportedOperationException();
     }
-    
-    @Override
+
     public float getChestplateDropChance() {
-        return 1.0f;
+        return 1;
     }
-    
-    @Override
-    public void setChestplateDropChance(final float chance) {
+
+    public void setChestplateDropChance(float chance) {
         throw new UnsupportedOperationException();
     }
-    
-    @Override
+
     public float getLeggingsDropChance() {
-        return 1.0f;
+        return 1;
     }
-    
-    @Override
-    public void setLeggingsDropChance(final float chance) {
+
+    public void setLeggingsDropChance(float chance) {
         throw new UnsupportedOperationException();
     }
-    
-    @Override
+
     public float getBootsDropChance() {
-        return 1.0f;
+        return 1;
     }
-    
-    @Override
-    public void setBootsDropChance(final float chance) {
+
+    public void setBootsDropChance(float chance) {
         throw new UnsupportedOperationException();
     }
 }

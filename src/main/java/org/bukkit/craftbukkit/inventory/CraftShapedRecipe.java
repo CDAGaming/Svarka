@@ -1,71 +1,60 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.inventory;
 
-import net.minecraft.item.crafting.CraftingManager;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
-import java.util.Iterator;
 import java.util.Map;
+
+import net.minecraft.server.CraftingManager;
+import net.minecraft.server.NonNullList;
+import net.minecraft.server.RecipeItemStack;
+import net.minecraft.server.ShapedRecipes;
+
+import org.bukkit.NamespacedKey;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.ItemStack;
-import net.minecraft.item.crafting.ShapedRecipes;
 import org.bukkit.inventory.ShapedRecipe;
 
-public class CraftShapedRecipe extends ShapedRecipe implements CraftRecipe
-{
+public class CraftShapedRecipe extends ShapedRecipe implements CraftRecipe {
+    // TODO: Could eventually use this to add a matches() method or some such
     private ShapedRecipes recipe;
-    
-    public CraftShapedRecipe(final ItemStack result) {
-        super(result);
+
+    public CraftShapedRecipe(NamespacedKey key, ItemStack result) {
+        super(key, result);
     }
-    
-    public CraftShapedRecipe(final ItemStack result, final ShapedRecipes recipe) {
-        this(result);
+
+    public CraftShapedRecipe(ItemStack result, ShapedRecipes recipe) {
+        this(CraftNamespacedKey.fromMinecraft(recipe.key), result);
         this.recipe = recipe;
     }
-    
-    public static CraftShapedRecipe fromBukkitRecipe(final ShapedRecipe recipe) {
+
+    public static CraftShapedRecipe fromBukkitRecipe(ShapedRecipe recipe) {
         if (recipe instanceof CraftShapedRecipe) {
-            return (CraftShapedRecipe)recipe;
+            return (CraftShapedRecipe) recipe;
         }
-        final CraftShapedRecipe ret = new CraftShapedRecipe(recipe.getResult());
-        final String[] shape = recipe.getShape();
+        CraftShapedRecipe ret = new CraftShapedRecipe(recipe.getKey(), recipe.getResult());
+        String[] shape = recipe.getShape();
         ret.shape(shape);
-        final Map<Character, ItemStack> ingredientMap = recipe.getIngredientMap();
-        for (final char c : ingredientMap.keySet()) {
-            final ItemStack stack = ingredientMap.get(c);
+        Map<Character, ItemStack> ingredientMap = recipe.getIngredientMap();
+        for (char c : ingredientMap.keySet()) {
+            ItemStack stack = ingredientMap.get(c);
             if (stack != null) {
                 ret.setIngredient(c, stack.getType(), stack.getDurability());
             }
         }
         return ret;
     }
-    
-    @Override
+
     public void addToCraftingManager() {
-        final String[] shape = this.getShape();
-        final Map<Character, ItemStack> ingred = this.getIngredientMap();
-        int datalen = shape.length;
-        datalen += ingred.size() * 2;
-        int i = 0;
-        final Object[] data = new Object[datalen];
-        while (i < shape.length) {
-            data[i] = shape[i];
-            ++i;
-        }
-        for (final char c : ingred.keySet()) {
-            final ItemStack mdata = ingred.get(c);
-            if (mdata == null) {
-                continue;
+        String[] shape = this.getShape();
+        Map<Character, ItemStack> ingred = this.getIngredientMap();
+        int width = shape[0].length();
+        NonNullList<RecipeItemStack> data = NonNullList.a(shape.length * width, RecipeItemStack.a);
+
+        for (int i = 0; i < shape.length; i++) {
+            String row = shape[i];
+            for (int j = 0; j < row.length(); j++) {
+                data.set(i * width + j, RecipeItemStack.a(new net.minecraft.server.ItemStack[]{CraftItemStack.asNMSCopy(ingred.get(row.charAt(j)))}));
             }
-            data[i] = c;
-            ++i;
-            final int id = mdata.getTypeId();
-            final short dmg = mdata.getDurability();
-            data[i] = new net.minecraft.item.ItemStack(CraftMagicNumbers.getItem(id), 1, dmg);
-            ++i;
         }
-        CraftingManager.getInstance().addRecipe(CraftItemStack.asNMSCopy(this.getResult()), data);
+
+        CraftingManager.a(CraftNamespacedKey.toMinecraft(this.getKey()), new ShapedRecipes("", width, shape.length, data, CraftItemStack.asNMSCopy(this.getResult())));
     }
 }

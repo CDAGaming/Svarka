@@ -1,6 +1,7 @@
 package org.bukkit.map;
 
 import java.util.HashMap;
+import org.bukkit.ChatColor;
 
 /**
  * Represents a bitmap font drawable to a map.
@@ -52,13 +53,15 @@ public class MapFont {
             throw new IllegalArgumentException("text contains invalid characters");
         }
 
-        if (text.length() == 0){
+        if (text.length() == 0) {
             return 0;
         }
 
         int result = 0;
         for (int i = 0; i < text.length(); ++i) {
-            result += chars.get(text.charAt(i)).getWidth();
+            char ch = text.charAt(i);
+            if (ch == ChatColor.COLOR_CHAR) continue;
+            result += chars.get(ch).getWidth();
         }
         result += text.length() - 1; // Account for 1px spacing between characters
 
@@ -84,7 +87,7 @@ public class MapFont {
     public boolean isValid(String text) {
         for (int i = 0; i < text.length(); ++i) {
             char ch = text.charAt(i);
-            if (ch == '\u00A7' || ch == '\n') continue;
+            if (ch == ChatColor.COLOR_CHAR || ch == '\n') continue;
             if (chars.get(ch) == null) return false;
         }
         return true;

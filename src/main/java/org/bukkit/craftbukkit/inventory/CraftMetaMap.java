@@ -1,137 +1,221 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.inventory;
 
-import com.google.common.collect.ImmutableMap;
-import org.bukkit.Material;
 import java.util.Map;
-import net.minecraft.nbt.NBTTagCompound;
+
+import net.minecraft.server.NBTTagCompound;
+import net.minecraft.server.NBTTagInt;
+import net.minecraft.server.NBTTagString;
+
+import org.bukkit.Color;
+import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
+import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
 import org.bukkit.inventory.meta.MapMeta;
 
-//@DelegateDeserialization(SerializableMeta.class)
-class CraftMetaMap extends CraftMetaItem implements MapMeta
-{
-    static final ItemMetaKey MAP_SCALING;
-    static final byte SCALING_EMPTY = 0;
-    static final byte SCALING_TRUE = 1;
-    static final byte SCALING_FALSE = 2;
-    private byte scaling;
-    
-    static {
-        MAP_SCALING = new ItemMetaKey("map_is_scaling", "scaling");
-    }
-    
-    CraftMetaMap(final CraftMetaItem meta) {
+import com.google.common.collect.ImmutableMap;
+
+@DelegateDeserialization(SerializableMeta.class)
+class CraftMetaMap extends CraftMetaItem implements MapMeta {
+    static final ItemMetaKey MAP_SCALING = new ItemMetaKey("map_is_scaling", "scaling");
+    static final ItemMetaKey MAP_LOC_NAME = new ItemMetaKey("LocName", "display-loc-name");
+    static final ItemMetaKey MAP_COLOR = new ItemMetaKey("MapColor", "display-map-color");
+    static final byte SCALING_EMPTY = (byte) 0;
+    static final byte SCALING_TRUE = (byte) 1;
+    static final byte SCALING_FALSE = (byte) 2;
+
+    private byte scaling = SCALING_EMPTY;
+    private String locName;
+    private Color color;
+
+    CraftMetaMap(CraftMetaItem meta) {
         super(meta);
-        this.scaling = 0;
+
         if (!(meta instanceof CraftMetaMap)) {
             return;
         }
-        final CraftMetaMap map = (CraftMetaMap)meta;
+
+        CraftMetaMap map = (CraftMetaMap) meta;
         this.scaling = map.scaling;
+        this.locName = map.locName;
+        this.color = map.color;
     }
-    
-    CraftMetaMap(final NBTTagCompound tag) {
+
+    CraftMetaMap(NBTTagCompound tag) {
         super(tag);
-        this.scaling = 0;
-        if (tag.hasKey(CraftMetaMap.MAP_SCALING.NBT)) {
-            this.scaling = (byte)(tag.getBoolean(CraftMetaMap.MAP_SCALING.NBT) ? 1 : 2);
+
+        if (tag.hasKey(MAP_SCALING.NBT)) {
+            this.scaling = tag.getBoolean(MAP_SCALING.NBT) ? SCALING_TRUE : SCALING_FALSE;
+        }
+
+        if (tag.hasKey(DISPLAY.NBT)) {
+            NBTTagCompound display = tag.getCompound(DISPLAY.NBT);
+
+            if (display.hasKey(MAP_LOC_NAME.NBT)) {
+                locName = display.getString(MAP_LOC_NAME.NBT);
+            }
+
+            if (display.hasKey(MAP_COLOR.NBT)) {
+                color = Color.fromRGB(display.getInt(MAP_COLOR.NBT));
+            }
         }
     }
-    
-    CraftMetaMap(final Map<String, Object> map) {
+
+    CraftMetaMap(Map<String, Object> map) {
         super(map);
-        this.scaling = 0;
-        final Boolean scaling = SerializableMeta.getObject(Boolean.class, map, CraftMetaMap.MAP_SCALING.BUKKIT, true);
+
+        Boolean scaling = SerializableMeta.getObject(Boolean.class, map, MAP_SCALING.BUKKIT, true);
         if (scaling != null) {
-            this.setScaling(scaling);
+            setScaling(scaling);
+        }
+
+        String locName = SerializableMeta.getString(map, MAP_LOC_NAME.BUKKIT, true);
+        if (locName != null) {
+            setLocationName(locName);
+        }
+
+        Color color = SerializableMeta.getObject(Color.class, map, MAP_COLOR.BUKKIT, true);
+        if (color != null) {
+            setColor(color);
         }
     }
-    
+
     @Override
-    void applyToItem(final NBTTagCompound tag) {
+    void applyToItem(NBTTagCompound tag) {
         super.applyToItem(tag);
-        if (this.hasScaling()) {
-            tag.setBoolean(CraftMetaMap.MAP_SCALING.NBT, this.isScaling());
+
+        if (hasScaling()) {
+            tag.setBoolean(MAP_SCALING.NBT, isScaling());
+        }
+
+        if (hasLocationName()) {
+            setDisplayTag(tag, MAP_LOC_NAME.NBT, new NBTTagString(getLocationName()));
+        }
+
+        if (hasColor()) {
+            setDisplayTag(tag, MAP_COLOR.NBT, new NBTTagInt(color.asRGB()));
         }
     }
-    
+
     @Override
-    boolean applicableTo(final Material type) {
+    boolean applicableTo(Material type) {
         switch (type) {
-            case MAP: {
+            case MAP:
                 return true;
-            }
-            default: {
+            default:
                 return false;
-            }
         }
     }
-    
+
     @Override
     boolean isEmpty() {
-        return super.isEmpty() && this.isMapEmpty();
+        return super.isEmpty() && isMapEmpty();
     }
-    
+
     boolean isMapEmpty() {
-        return !this.hasScaling();
+        return !(hasScaling() | hasLocationName() || hasColor());
     }
-    
+
     boolean hasScaling() {
-        return this.scaling != 0;
+        return scaling != SCALING_EMPTY;
     }
-    
-    @Override
+
     public boolean isScaling() {
-        return this.scaling == 1;
+        return scaling == SCALING_TRUE;
     }
-    
-    @Override
-    public void setScaling(final boolean scaling) {
-        this.scaling = (byte)(scaling ? 1 : 2);
+
+    public void setScaling(boolean scaling) {
+        this.scaling = scaling ? SCALING_TRUE : SCALING_FALSE;
     }
-    
+
     @Override
-    boolean equalsCommon(final CraftMetaItem meta) {
+    public boolean hasLocationName() {
+        return this.locName != null;
+    }
+
+    @Override
+    public String getLocationName() {
+        return this.locName;
+    }
+
+    @Override
+    public void setLocationName(String name) {
+        this.locName = name;
+    }
+
+    @Override
+    public boolean hasColor() {
+        return this.color != null;
+    }
+
+    @Override
+    public Color getColor() {
+        return this.color;
+    }
+
+    @Override
+    public void setColor(Color color) {
+        this.color = color;
+    }
+
+    @Override
+    boolean equalsCommon(CraftMetaItem meta) {
         if (!super.equalsCommon(meta)) {
             return false;
         }
         if (meta instanceof CraftMetaMap) {
-            final CraftMetaMap that = (CraftMetaMap)meta;
-            return this.scaling == that.scaling;
+            CraftMetaMap that = (CraftMetaMap) meta;
+
+            return (this.scaling == that.scaling)
+                    && (hasLocationName() ? that.hasLocationName() && this.locName.equals(that.locName) : !that.hasLocationName())
+                    && (hasColor() ? that.hasColor() && this.color.equals(that.color) : !that.hasColor());
         }
         return true;
     }
-    
+
     @Override
-    boolean notUncommon(final CraftMetaItem meta) {
-        return super.notUncommon(meta) && (meta instanceof CraftMetaMap || this.isMapEmpty());
+    boolean notUncommon(CraftMetaItem meta) {
+        return super.notUncommon(meta) && (meta instanceof CraftMetaMap || isMapEmpty());
     }
-    
+
     @Override
     int applyHash() {
-        int hash;
-        final int original = hash = super.applyHash();
-        if (this.hasScaling()) {
-            hash ^= 572662306 << (this.isScaling() ? 1 : -1);
+        final int original;
+        int hash = original = super.applyHash();
+
+        if (hasScaling()) {
+            hash ^= 0x22222222 << (isScaling() ? 1 : -1);
         }
-        return (original != hash) ? (CraftMetaMap.class.hashCode() ^ hash) : hash;
+        if (hasLocationName()) {
+            hash = 61 * hash + locName.hashCode();
+        }
+        if (hasColor()) {
+            hash = 61 * hash + color.hashCode();
+        }
+
+        return original != hash ? CraftMetaMap.class.hashCode() ^ hash : hash;
     }
-    
-    @Override
+
+
     public CraftMetaMap clone() {
-        return (CraftMetaMap)super.clone();
+        return (CraftMetaMap) super.clone();
     }
-    
+
     @Override
-    ImmutableMap.Builder<String, Object> serialize(final ImmutableMap.Builder<String, Object> builder) {
+    ImmutableMap.Builder<String, Object> serialize(ImmutableMap.Builder<String, Object> builder) {
         super.serialize(builder);
-        if (this.hasScaling()) {
-            builder.put(CraftMetaMap.MAP_SCALING.BUKKIT, this.isScaling());
+
+        if (hasScaling()) {
+            builder.put(MAP_SCALING.BUKKIT, isScaling());
         }
+
+        if (hasLocationName()) {
+            builder.put(MAP_LOC_NAME.BUKKIT, getLocationName());
+        }
+
+        if (hasColor()) {
+            builder.put(MAP_COLOR.BUKKIT, getColor());
+        }
+
         return builder;
     }
 }

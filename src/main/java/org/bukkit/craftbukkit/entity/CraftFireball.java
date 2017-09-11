@@ -1,105 +1,88 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.EntityType;
-import net.minecraft.util.math.MathHelper;
-import org.apache.commons.lang.Validate;
-import org.bukkit.util.Vector;
-import org.bukkit.projectiles.ProjectileSource;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.projectile.EntityFireball;
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.Fireball;
+import net.minecraft.server.EntityFireball;
+import net.minecraft.server.MathHelper;
 
-public class CraftFireball extends AbstractProjectile implements Fireball
-{
-    public CraftFireball(final CraftServer server, final EntityFireball entity) {
+import org.apache.commons.lang.Validate;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Fireball;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.projectiles.ProjectileSource;
+import org.bukkit.util.Vector;
+
+public class CraftFireball extends AbstractProjectile implements Fireball {
+    public CraftFireball(CraftServer server, EntityFireball entity) {
         super(server, entity);
     }
-    
-    @Override
+
     public float getYield() {
-        return this.getHandle().bukkitYield;
+        return getHandle().bukkitYield;
     }
-    
-    @Override
+
     public boolean isIncendiary() {
-        return this.getHandle().isIncendiary;
+        return getHandle().isIncendiary;
     }
-    
-    @Override
-    public void setIsIncendiary(final boolean isIncendiary) {
-        this.getHandle().isIncendiary = isIncendiary;
+
+    public void setIsIncendiary(boolean isIncendiary) {
+        getHandle().isIncendiary = isIncendiary;
     }
-    
-    @Override
-    public void setYield(final float yield) {
-        this.getHandle().bukkitYield = yield;
+
+    public void setYield(float yield) {
+        getHandle().bukkitYield = yield;
     }
-    
-    @Override
+
     public ProjectileSource getShooter() {
-        return this.getHandle().projectileSource;
+        return getHandle().projectileSource;
     }
-    
-    @Override
-    public void setShooter(final ProjectileSource shooter) {
+
+    public void setShooter(ProjectileSource shooter) {
         if (shooter instanceof CraftLivingEntity) {
-            this.getHandle().shootingEntity = ((CraftLivingEntity)shooter).getHandle();
+            getHandle().shooter = ((CraftLivingEntity) shooter).getHandle();
+        } else {
+            getHandle().shooter = null;
         }
-        else {
-            this.getHandle().shootingEntity = null;
-        }
-        this.getHandle().projectileSource = shooter;
+        getHandle().projectileSource = shooter;
     }
-    
-    @Override
+
     public Vector getDirection() {
-        return new Vector(this.getHandle().accelerationX, this.getHandle().accelerationY, this.getHandle().accelerationZ);
+        return new Vector(getHandle().dirX, getHandle().dirY, getHandle().dirZ);
     }
-    
-    @Override
-    public void setDirection(final Vector direction) {
-        Validate.notNull((Object)direction, "Direction can not be null");
-        final double x = direction.getX();
-        final double y = direction.getY();
-        final double z = direction.getZ();
-        final double magnitude = MathHelper.sqrt_double(x * x + y * y + z * z);
-        this.getHandle().accelerationX = x / magnitude;
-        this.getHandle().accelerationY = y / magnitude;
-        this.getHandle().accelerationZ = z / magnitude;
+
+    public void setDirection(Vector direction) {
+        Validate.notNull(direction, "Direction can not be null");
+        double x = direction.getX();
+        double y = direction.getY();
+        double z = direction.getZ();
+        double magnitude = (double) MathHelper.sqrt(x * x + y * y + z * z);
+        getHandle().dirX = x / magnitude;
+        getHandle().dirY = y / magnitude;
+        getHandle().dirZ = z / magnitude;
     }
-    
+
     @Override
     public EntityFireball getHandle() {
-        return (EntityFireball)this.entity;
+        return (EntityFireball) entity;
     }
-    
+
     @Override
     public String toString() {
         return "CraftFireball";
     }
-    
-    @Override
+
     public EntityType getType() {
         return EntityType.UNKNOWN;
     }
-    
+
     @Deprecated
-    @Override
-    public void _INVALID_setShooter(final LivingEntity shooter) {
-        this.setShooter(shooter);
+    public void _INVALID_setShooter(LivingEntity shooter) {
+        setShooter(shooter);
     }
-    
+
     @Deprecated
-    @Override
     public LivingEntity _INVALID_getShooter() {
-        if (this.getHandle().shootingEntity != null) {
-            return (LivingEntity)this.getHandle().shootingEntity.getBukkitEntity();
+        if (getHandle().shooter != null) {
+            return (LivingEntity) getHandle().shooter.getBukkitEntity();
         }
         return null;
     }

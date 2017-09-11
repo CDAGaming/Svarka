@@ -1,72 +1,63 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import org.bukkit.entity.EntityType;
-import net.minecraft.entity.EntityLivingBase;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.projectiles.ProjectileSource;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.projectile.EntityShulkerBullet;
+import net.minecraft.server.EntityShulkerBullet;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.ShulkerBullet;
+import org.bukkit.projectiles.ProjectileSource;
 
-public class CraftShulkerBullet extends AbstractProjectile implements ShulkerBullet
-{
-    public CraftShulkerBullet(final CraftServer server, final EntityShulkerBullet entity) {
+public class CraftShulkerBullet extends AbstractProjectile implements ShulkerBullet {
+
+    public CraftShulkerBullet(CraftServer server, EntityShulkerBullet entity) {
         super(server, entity);
     }
-    
+
     @Override
     public ProjectileSource getShooter() {
-        return this.getHandle().projectileSource;
+        return getHandle().projectileSource;
     }
-    
+
     @Override
-    public void setShooter(final ProjectileSource shooter) {
+    public void setShooter(ProjectileSource shooter) {
         if (shooter instanceof LivingEntity) {
-            this.getHandle().setShooter(((CraftLivingEntity)shooter).getHandle());
+            getHandle().setShooter(((CraftLivingEntity) shooter).getHandle());
+        } else {
+            getHandle().setShooter(null);
         }
-        else {
-            this.getHandle().setShooter(null);
-        }
-        this.getHandle().projectileSource = shooter;
+        getHandle().projectileSource = shooter;
     }
-    
+
     @Override
     public org.bukkit.entity.Entity getTarget() {
-        return (this.getHandle().getTarget() != null) ? this.getHandle().getTarget().getBukkitEntity() : null;
+        return getHandle().getTarget() != null ? getHandle().getTarget().getBukkitEntity() : null;
     }
-    
+
     @Override
-    public void setTarget(final org.bukkit.entity.Entity target) {
-        this.getHandle().setTarget((target == null) ? null : ((CraftEntity)target).getHandle());
+    public void setTarget(org.bukkit.entity.Entity target) {
+        getHandle().setTarget(target == null ? null : ((CraftEntity) target).getHandle());
     }
-    
+
     @Override
     public EntityType getType() {
         return EntityType.SHULKER_BULLET;
     }
-    
+
     @Override
     public EntityShulkerBullet getHandle() {
-        return (EntityShulkerBullet)this.entity;
+        return (EntityShulkerBullet) entity;
     }
-    
+
     @Deprecated
-    @Override
     public LivingEntity _INVALID_getShooter() {
-        if (this.getHandle().getShooter() == null) {
+        if (getHandle().getShooter() == null) {
             return null;
         }
-        return (LivingEntity)this.getHandle().getShooter().getBukkitEntity();
+        return (LivingEntity) getHandle().getShooter().getBukkitEntity();
     }
-    
+
     @Deprecated
-    @Override
-    public void _INVALID_setShooter(final LivingEntity shooter) {
-        this.getHandle().setShooter(((CraftLivingEntity)shooter).getHandle());
+    public void _INVALID_setShooter(LivingEntity shooter) {
+        getHandle().setShooter(((CraftLivingEntity) shooter).getHandle());
     }
 }

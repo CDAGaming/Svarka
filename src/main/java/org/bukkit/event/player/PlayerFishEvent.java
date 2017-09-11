@@ -17,18 +17,6 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
     private final State state;
     private final Fish hookEntity;
 
-    /**
-     * @deprecated replaced by {@link #PlayerFishEvent(Player, Entity, Fish,
-     *     State)} to include the {@link Fish} hook entity.
-     * @param player the player fishing
-     * @param entity the caught entity
-     * @param state the state of fishing
-     */
-    @Deprecated
-    public PlayerFishEvent(final Player player, final Entity entity, final State state) {
-        this(player, entity, null, state);
-    }
-
     public PlayerFishEvent(final Player player, final Entity entity, final Fish hookEntity, final State state) {
         super(player);
         this.entity = entity;
@@ -118,24 +106,29 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
          */
         FISHING,
         /**
-         * When a player has successfully caught a fish and is reeling it in.
+         * When a player has successfully caught a fish and is reeling it in. In
+         * this instance, a "fish" is any item retrieved from water as a result
+         * of fishing, ie an item, but not necessarily a fish.
          */
         CAUGHT_FISH,
         /**
-         * When a player has successfully caught an entity
+         * When a player has successfully caught an entity. This refers to any
+         * already spawned entity in the world that has been hooked directly by
+         * the rod.
          */
         CAUGHT_ENTITY,
         /**
-         * When a bobber is stuck in the ground
+         * When a bobber is stuck in the ground.
          */
         IN_GROUND,
         /**
          * When a player fails to catch anything while fishing usually due to
-         * poor aiming or timing
+         * poor aiming or timing.
          */
         FAILED_ATTEMPT,
         /**
-         * Called when there is a bite on the hook and it is ready to be reeled in.
+         * Called when there is a bite on the hook and it is ready to be reeled
+         * in.
          */
         BITE
     }

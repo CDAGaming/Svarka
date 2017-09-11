@@ -1,69 +1,64 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.block;
 
-import net.minecraft.tileentity.TileEntity;
-import org.bukkit.inventory.Inventory;
+import net.minecraft.server.TileEntityFurnace;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.block.Furnace;
 import org.bukkit.craftbukkit.inventory.CraftInventoryFurnace;
 import org.bukkit.inventory.FurnaceInventory;
-import org.bukkit.Material;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.block.Block;
-import net.minecraft.tileentity.TileEntityFurnace;
-import org.bukkit.block.Furnace;
 
-public class CraftFurnace extends CraftBlockState implements Furnace
-{
-    private final TileEntityFurnace furnace;
-    
+public class CraftFurnace extends CraftContainer<TileEntityFurnace> implements Furnace {
+
     public CraftFurnace(final Block block) {
-        super(block);
-        this.furnace = (TileEntityFurnace)((CraftWorld)block.getWorld()).getTileEntityAt(this.getX(), this.getY(), this.getZ());
+        super(block, TileEntityFurnace.class);
     }
-    
+
     public CraftFurnace(final Material material, final TileEntityFurnace te) {
-        super(material);
-        this.furnace = te;
+        super(material, te);
     }
-    
+
+    @Override
+    public FurnaceInventory getSnapshotInventory() {
+        return new CraftInventoryFurnace(this.getSnapshot());
+    }
+
     @Override
     public FurnaceInventory getInventory() {
-        return new CraftInventoryFurnace(this.furnace);
-    }
-    
-    @Override
-    public boolean update(final boolean force, final boolean applyPhysics) {
-        final boolean result = super.update(force, applyPhysics);
-        if (result) {
-            this.furnace.markDirty();
+        if (!this.isPlaced()) {
+            return this.getSnapshotInventory();
         }
-        return result;
+
+        return new CraftInventoryFurnace(this.getTileEntity());
     }
-    
+
     @Override
     public short getBurnTime() {
-        return (short)this.furnace.getField(0);
+        return (short) this.getSnapshot().getProperty(0);
     }
-    
+
     @Override
-    public void setBurnTime(final short burnTime) {
-        this.furnace.setField(0, burnTime);
+    public void setBurnTime(short burnTime) {
+        this.getSnapshot().setProperty(0, burnTime);
     }
-    
+
     @Override
     public short getCookTime() {
-        return (short)this.furnace.getField(2);
+        return (short) this.getSnapshot().getProperty(2);
     }
-    
+
     @Override
-    public void setCookTime(final short cookTime) {
-        this.furnace.setField(2, cookTime);
+    public void setCookTime(short cookTime) {
+        this.getSnapshot().setProperty(2, cookTime);
     }
-    
+
     @Override
-    public TileEntityFurnace getTileEntity() {
-        return this.furnace;
+    public String getCustomName() {
+        TileEntityFurnace furnace = this.getSnapshot();
+        return furnace.hasCustomName() ? furnace.getName() : null;
+    }
+
+    @Override
+    public void setCustomName(String name) {
+        this.getSnapshot().setCustomName(name);
     }
 }

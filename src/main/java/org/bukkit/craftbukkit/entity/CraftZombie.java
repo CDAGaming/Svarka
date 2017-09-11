@@ -1,65 +1,57 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import org.bukkit.entity.Villager;
-import net.minecraft.entity.monster.ZombieType;
-import org.bukkit.entity.EntityType;
-import net.minecraft.entity.monster.EntityMob;
-import net.minecraft.entity.monster.EntityZombie;
+import net.minecraft.server.EntityZombie;
+import net.minecraft.server.EntityZombieVillager;
+
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Villager;
 import org.bukkit.entity.Zombie;
 
-public class CraftZombie extends CraftMonster implements Zombie
-{
-    public CraftZombie(final CraftServer server, final EntityZombie entity) {
+public class CraftZombie extends CraftMonster implements Zombie {
+
+    public CraftZombie(CraftServer server, EntityZombie entity) {
         super(server, entity);
     }
-    
+
     @Override
     public EntityZombie getHandle() {
-        return (EntityZombie)this.entity;
+        return (EntityZombie) entity;
     }
-    
+
     @Override
     public String toString() {
         return "CraftZombie";
     }
-    
-    @Override
+
     public EntityType getType() {
         return EntityType.ZOMBIE;
     }
-    
-    @Override
+
     public boolean isBaby() {
-        return this.getHandle().isChild();
+        return getHandle().isBaby();
     }
-    
-    @Override
-    public void setBaby(final boolean flag) {
-        this.getHandle().setChild(flag);
+
+    public void setBaby(boolean flag) {
+        getHandle().setBaby(flag);
     }
-    
-    @Override
+
     public boolean isVillager() {
-        return this.getHandle().isVillager();
+        return getHandle() instanceof EntityZombieVillager;
     }
-    
+
     @Override
-    public void setVillager(final boolean flag) {
-        this.getHandle().setZombieType(flag ? ZombieType.VILLAGER_FARMER : ZombieType.NORMAL);
+    public void setVillager(boolean flag) {
+        throw new UnsupportedOperationException("Not supported.");
     }
-    
+
     @Override
-    public void setVillagerProfession(final Villager.Profession profession) {
-        this.getHandle().setZombieType((profession == null) ? ZombieType.NORMAL : ZombieType.getByOrdinal(profession.ordinal()));
+    public void setVillagerProfession(Villager.Profession profession) {
+        throw new UnsupportedOperationException("Not supported.");
     }
-    
+
     @Override
     public Villager.Profession getVillagerProfession() {
-        return Villager.Profession.values()[this.getHandle().getZombieType().ordinal()];
+        return null;
     }
 }

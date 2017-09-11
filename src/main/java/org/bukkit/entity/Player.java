@@ -13,10 +13,14 @@ import org.bukkit.Note;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.Statistic;
 import org.bukkit.WeatherType;
+import org.bukkit.advancement.Advancement;
+import org.bukkit.advancement.AdvancementProgress;
 import org.bukkit.command.CommandSender;
 import org.bukkit.conversations.Conversable;
+import org.bukkit.event.player.PlayerResourcePackStatusEvent;
 import org.bukkit.map.MapView;
 import org.bukkit.plugin.messaging.PluginMessageRecipient;
 import org.bukkit.scoreboard.Scoreboard;
@@ -242,6 +246,34 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     public void playSound(Location location, String sound, float volume, float pitch);
 
     /**
+     * Play a sound for a player at the location.
+     * <p>
+     * This function will fail silently if Location or Sound are null.
+     *
+     * @param location The location to play the sound
+     * @param sound The sound to play
+     * @param category The category of the sound
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
+     */
+    public void playSound(Location location, Sound sound, SoundCategory category, float volume, float pitch);
+
+    /**
+     * Play a sound for a player at the location.
+     * <p>
+     * This function will fail silently if Location or Sound are null. No sound
+     * will be heard by the player if their client does not have the respective
+     * sound for the value passed.
+     *
+     * @param location the location to play the sound
+     * @param sound the internal sound name to play
+     * @param category The category of the sound
+     * @param volume the volume of the sound
+     * @param pitch the pitch of the sound
+     */
+    public void playSound(Location location, String sound, SoundCategory category, float volume, float pitch);
+
+    /**
      * Stop the specified sound from playing.
      *
      * @param sound the sound to stop
@@ -254,6 +286,22 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      * @param sound the sound to stop
      */
     public void stopSound(String sound);
+
+    /**
+     * Stop the specified sound from playing.
+     *
+     * @param sound the sound to stop
+     * @param category the category of the sound
+     */
+    public void stopSound(Sound sound, SoundCategory category);
+
+    /**
+     * Stop the specified sound from playing.
+     *
+     * @param sound the sound to stop
+     * @param category the category of the sound
+     */
+    public void stopSound(String sound, SoundCategory category);
 
     /**
      * Plays an effect to just this player.
@@ -360,7 +408,9 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      *
      * @param achievement Achievement to award
      * @throws IllegalArgumentException if achievement is null
+     * @deprecated future versions of Minecraft do not have achievements
      */
+    @Deprecated
     public void awardAchievement(Achievement achievement);
 
     /**
@@ -369,7 +419,9 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      *
      * @param achievement Achievement to remove
      * @throws IllegalArgumentException if achievement is null
+     * @deprecated future versions of Minecraft do not have achievements
      */
+    @Deprecated
     public void removeAchievement(Achievement achievement);
 
     /**
@@ -378,7 +430,9 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      * @param achievement the achievement to check
      * @return whether the player has the achievement
      * @throws IllegalArgumentException if achievement is null
+     * @deprecated future versions of Minecraft do not have achievements
      */
+    @Deprecated
     public boolean hasAchievement(Achievement achievement);
 
     /**
@@ -744,16 +798,22 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     public void setLevel(int level);
 
     /**
-     * Gets the players total experience points
+     * Gets the players total experience points.
+     * <br>
+     * This refers to the total amount of experience the player has collected
+     * over time and is only displayed as the player's "score" upon dying.
      *
      * @return Current total experience points
      */
     public int getTotalExperience();
 
     /**
-     * Sets the players current experience level
+     * Sets the players current experience points.
+     * <br>
+     * This refers to the total amount of experience the player has collected
+     * over time and is only displayed as the player's "score" upon dying.
      *
-     * @param exp New experience level
+     * @param exp New total experience points
      */
     public void setTotalExperience(int exp);
 
@@ -870,18 +930,6 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
     public boolean canSee(Player player);
 
     /**
-     * Checks to see if this player is currently standing on a block. This
-     * information may not be reliable, as it is a state provided by the
-     * client, and may therefore not be accurate.
-     *
-     * @return True if the player standing on a solid block, else false.
-     * @deprecated Inconsistent with {@link
-     *     org.bukkit.entity.Entity#isOnGround()}
-     */
-    @Deprecated
-    public boolean isOnGround();
-
-    /**
      * Checks to see if this player is currently flying or not.
      *
      * @return True if the player is flying, else false.
@@ -935,18 +983,23 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      * The player's client will download the new texture pack asynchronously
      * in the background, and will automatically switch to it once the
      * download is complete. If the client has downloaded and cached the same
-     * texture pack in the past, it will perform a quick timestamp check over
-     * the network to determine if the texture pack has changed and needs to
-     * be downloaded again. When this request is sent for the very first time
-     * from a given server, the client will first display a confirmation GUI
-     * to the player before proceeding with the download.
+     * texture pack in the past, it will perform a file size check against
+     * the response content to determine if the texture pack has changed and
+     * needs to be downloaded again. When this request is sent for the very
+     * first time from a given server, the client will first display a
+     * confirmation GUI to the player before proceeding with the download.
      * <p>
      * Notes:
      * <ul>
      * <li>Players can disable server textures on their client, in which
-     *     case this method will have no affect on them.
+     *     case this method will have no affect on them. Use the
+     *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
+     *     the player loaded the pack!
      * <li>There is no concept of resetting texture packs back to default
-     *     within Minecraft, so players will have to relog to do so.
+     *     within Minecraft, so players will have to relog to do so or you
+     *     have to send an empty pack.
+     * <li>The request is send with "null" as the hash. This might result
+     *     in newer versions not loading the pack correctly.
      * </ul>
      *
      * @param url The URL from which the client will download the texture
@@ -966,8 +1019,8 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      * The player's client will download the new resource pack asynchronously
      * in the background, and will automatically switch to it once the
      * download is complete. If the client has downloaded and cached the same
-     * resource pack in the past, it will perform a quick timestamp check
-     * over the network to determine if the resource pack has changed and
+     * resource pack in the past, it will perform a file size check against
+     * the response content to determine if the resource pack has changed and
      * needs to be downloaded again. When this request is sent for the very
      * first time from a given server, the client will first display a
      * confirmation GUI to the player before proceeding with the download.
@@ -975,9 +1028,14 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      * Notes:
      * <ul>
      * <li>Players can disable server resources on their client, in which
-     *     case this method will have no affect on them.
+     *     case this method will have no affect on them. Use the
+     *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
+     *     the player loaded the pack!
      * <li>There is no concept of resetting resource packs back to default
-     *     within Minecraft, so players will have to relog to do so.
+     *     within Minecraft, so players will have to relog to do so or you
+     *     have to send an empty pack.
+     * <li>The request is send with "null" as the hash. This might result
+     *     in newer versions not loading the pack correctly.
      * </ul>
      *
      * @param url The URL from which the client will download the resource
@@ -988,6 +1046,43 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      *     length restriction is an implementation specific arbitrary value.
      */
     public void setResourcePack(String url);
+
+    /**
+     * Request that the player's client download and switch resource packs.
+     * <p>
+     * The player's client will download the new resource pack asynchronously
+     * in the background, and will automatically switch to it once the
+     * download is complete. If the client has downloaded and cached a
+     * resource pack with the same hash in the past it will not download but
+     * directly apply the cached pack. When this request is sent for the very
+     * first time from a given server, the client will first display a
+     * confirmation GUI to the player before proceeding with the download.
+     * <p>
+     * Notes:
+     * <ul>
+     * <li>Players can disable server resources on their client, in which
+     *     case this method will have no affect on them. Use the
+     *     {@link PlayerResourcePackStatusEvent} to figure out whether or not
+     *     the player loaded the pack!
+     * <li>There is no concept of resetting resource packs back to default
+     *     within Minecraft, so players will have to relog to do so or you
+     *     have to send an empty pack.
+     * </ul>
+     *
+     * @param url The URL from which the client will download the resource
+     *     pack. The string must contain only US-ASCII characters and should
+     *     be encoded as per RFC 1738.
+     * @param hash The sha1 hash sum of the resource pack file which is used
+     *     to apply a cached version of the pack directly without downloading
+     *     if it is available. Hast to be 20 bytes long!
+     * @throws IllegalArgumentException Thrown if the URL is null.
+     * @throws IllegalArgumentException Thrown if the URL is too long. The
+     *     length restriction is an implementation specific arbitrary value.
+     * @throws IllegalArgumentException Thrown if the hash is null.
+     * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
+     *     long.
+     */
+    public void setResourcePack(String url, byte[] hash);
 
     /**
      * Gets the Scoreboard displayed to this player
@@ -1076,22 +1171,37 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      * values are null, they will not be sent and the display will remain
      * unchanged. If they are empty strings, the display will be updated as
      * such. If the strings contain a new line, only the first line will be
-     * sent.
+     * sent. The titles will be displayed with the client's default timings.
      *
      * @param title Title text
      * @param subtitle Subtitle text
-     * @deprecated API subject to change
+     * @deprecated API behavior subject to change
      */
     @Deprecated
     public void sendTitle(String title, String subtitle);
 
     /**
-     * Resets the title displayed to the player.
-     * @deprecated API subject to change.
+     * Sends a title and a subtitle message to the player. If either of these
+     * values are null, they will not be sent and the display will remain
+     * unchanged. If they are empty strings, the display will be updated as
+     * such. If the strings contain a new line, only the first line will be
+     * sent. All timings values may take a value of -1 to indicate that they
+     * will use the last value sent (or the defaults if no title has been
+     * displayed).
+     *
+     * @param title Title text
+     * @param subtitle Subtitle text
+     * @param fadeIn time in ticks for titles to fade in. Defaults to 10.
+     * @param stay time in ticks for titles to stay. Defaults to 70.
+     * @param fadeOut time in ticks for titles to fade out. Defaults to 20.
      */
-    @Deprecated
-    public void resetTitle();
+    public void sendTitle(String title, String subtitle, int fadeIn, int stay, int fadeOut);
 
+    /**
+     * Resets the title displayed to the player. This will clear the displayed
+     * title / subtitle and reset timings to their default values.
+     */
+    public void resetTitle();
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -1286,4 +1396,24 @@ public interface Player extends HumanEntity, Conversable, CommandSender, Offline
      */
     public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data);
 
+    /**
+     * Return the player's progression on the specified advancement.
+     *
+     * @param advancement advancement
+     * @return object detailing the player's progress
+     */
+    public AdvancementProgress getAdvancementProgress(Advancement advancement);
+
+    /**
+     * Gets the player's current locale.
+     *
+     * The value of the locale String is not defined properly.
+     * <br>
+     * The vanilla Minecraft client will use lowercase language / country pairs
+     * separated by an underscore, but custom resource packs may use any format
+     * they wish.
+     *
+     * @return the player's locale
+     */
+    public String getLocale();
 }

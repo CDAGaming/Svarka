@@ -1,36 +1,50 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.help;
 
-public class HelpTopicAmendment
-{
+/**
+ * A HelpTopicAmendment represents the contents of a topic amendment from the help.yml
+ */
+public class HelpTopicAmendment {
     private final String topicName;
     private final String shortText;
     private final String fullText;
     private final String permission;
-    
-    public HelpTopicAmendment(final String topicName, final String shortText, final String fullText, final String permission) {
+
+    public HelpTopicAmendment(String topicName, String shortText, String fullText, String permission) {
         this.fullText = fullText;
         this.shortText = shortText;
         this.topicName = topicName;
         this.permission = permission;
     }
-    
+
+    /**
+     * Gets the amended full text
+     * @return the full text
+     */
     public String getFullText() {
-        return this.fullText;
+        return fullText;
     }
-    
+
+    /**
+     * Gets the amended short text
+     * @return the short text
+     */
     public String getShortText() {
-        return this.shortText;
+        return shortText;
     }
-    
+
+    /**
+     * Gets the name of the topic being amended
+     * @return the topic name
+     */
     public String getTopicName() {
-        return this.topicName;
+        return topicName;
     }
-    
+
+    /**
+     * Gets the amended permission
+     * @return the permission
+     */
     public String getPermission() {
-        return this.permission;
+        return permission;
     }
 }

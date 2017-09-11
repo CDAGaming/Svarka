@@ -97,13 +97,6 @@ public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
          */
         LIGHTNING,
         /**
-         * When a creature is spawned by a player that is sleeping
-         *
-         * @deprecated No longer used
-         */
-        @Deprecated
-        BED,
-        /**
          * When a snowman is spawned by being built
          */
         BUILD_SNOWMAN,
@@ -172,6 +165,11 @@ public class CreatureSpawnEvent extends EntityEvent implements Cancellable {
          * When an entity is spawned as a result of ender pearl usage
          */
         ENDER_PEARL,
+        /**
+         * When an entity is spawned as a result of the entity it is being
+         * perched on jumping or being damaged
+         */
+        SHOULDER_ENTITY,
         /**
          * When a creature is spawned by plugins
          */

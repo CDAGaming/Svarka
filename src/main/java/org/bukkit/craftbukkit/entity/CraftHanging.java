@@ -1,95 +1,79 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import org.bukkit.entity.EntityType;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.server.BlockPosition;
+import net.minecraft.server.EntityHanging;
+import net.minecraft.server.EnumDirection;
+import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityHanging;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Hanging;
 
-public class CraftHanging extends CraftEntity implements Hanging
-{
-    public CraftHanging(final CraftServer server, final EntityHanging entity) {
+public class CraftHanging extends CraftEntity implements Hanging {
+    public CraftHanging(CraftServer server, EntityHanging entity) {
         super(server, entity);
     }
-    
-    @Override
+
     public BlockFace getAttachedFace() {
-        return this.getFacing().getOppositeFace();
+        return getFacing().getOppositeFace();
     }
-    
-    @Override
-    public void setFacingDirection(final BlockFace face) {
-        this.setFacingDirection(face, false);
+
+    public void setFacingDirection(BlockFace face) {
+        setFacingDirection(face, false);
     }
-    
-    @Override
-    public boolean setFacingDirection(final BlockFace face, final boolean force) {
-        final EntityHanging hanging = this.getHandle();
-        final EnumFacing dir = hanging.facingDirection;
+
+    public boolean setFacingDirection(BlockFace face, boolean force) {
+        EntityHanging hanging = getHandle();
+        EnumDirection dir = hanging.direction;
         switch (face) {
-            default: {
-                this.getHandle().updateFacingWithBoundingBox(EnumFacing.SOUTH);
+            case SOUTH:
+            default:
+                getHandle().setDirection(EnumDirection.SOUTH);
                 break;
-            }
-            case WEST: {
-                this.getHandle().updateFacingWithBoundingBox(EnumFacing.WEST);
+            case WEST:
+                getHandle().setDirection(EnumDirection.WEST);
                 break;
-            }
-            case NORTH: {
-                this.getHandle().updateFacingWithBoundingBox(EnumFacing.NORTH);
+            case NORTH:
+                getHandle().setDirection(EnumDirection.NORTH);
                 break;
-            }
-            case EAST: {
-                this.getHandle().updateFacingWithBoundingBox(EnumFacing.EAST);
+            case EAST:
+                getHandle().setDirection(EnumDirection.EAST);
                 break;
-            }
         }
-        if (!force && !hanging.onValidSurface()) {
-            hanging.updateFacingWithBoundingBox(dir);
+        if (!force && !hanging.survives()) {
+            // Revert since it doesn't fit
+            hanging.setDirection(dir);
             return false;
         }
         return true;
     }
-    
-    @Override
+
     public BlockFace getFacing() {
-        final EnumFacing direction = this.getHandle().facingDirection;
-        if (direction == null) {
-            return BlockFace.SELF;
-        }
+        EnumDirection direction = this.getHandle().direction;
+        if (direction == null) return BlockFace.SELF;
         switch (direction) {
-            default: {
+            case SOUTH:
+            default:
                 return BlockFace.SOUTH;
-            }
-            case WEST: {
+            case WEST:
                 return BlockFace.WEST;
-            }
-            case NORTH: {
+            case NORTH:
                 return BlockFace.NORTH;
-            }
-            case EAST: {
+            case EAST:
                 return BlockFace.EAST;
-            }
         }
     }
-    
+
     @Override
     public EntityHanging getHandle() {
-        return (EntityHanging)this.entity;
+        return (EntityHanging) entity;
     }
-    
+
     @Override
     public String toString() {
         return "CraftHanging";
     }
-    
-    @Override
+
     public EntityType getType() {
         return EntityType.UNKNOWN;
     }

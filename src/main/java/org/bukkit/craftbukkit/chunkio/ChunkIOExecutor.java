@@ -1,56 +1,36 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.chunkio;
 
-import net.minecraft.world.gen.ChunkProviderServer;
-import net.minecraft.world.chunk.storage.AnvilChunkLoader;
-import net.minecraft.world.World;
-import net.minecraft.world.chunk.Chunk;
+import net.minecraft.server.Chunk;
+import net.minecraft.server.ChunkProviderServer;
+import net.minecraft.server.ChunkRegionLoader;
+import net.minecraft.server.World;
 import org.bukkit.craftbukkit.util.AsynchronousExecutor;
 
-public class ChunkIOExecutor
-{
+public class ChunkIOExecutor {
     static final int BASE_THREADS = 1;
     static final int PLAYERS_PER_THREAD = 50;
-    private static final AsynchronousExecutor<QueuedChunk, Chunk, Runnable, RuntimeException> instance;
-    
-    static {
-        instance = new AsynchronousExecutor<QueuedChunk, Chunk, Runnable, RuntimeException>(new ChunkIOProvider(), 1);
+
+    private static final AsynchronousExecutor<QueuedChunk, Chunk, Runnable, RuntimeException> instance = new AsynchronousExecutor<QueuedChunk, Chunk, Runnable, RuntimeException>(new ChunkIOProvider(), BASE_THREADS);
+
+    public static Chunk syncChunkLoad(World world, ChunkRegionLoader loader, ChunkProviderServer provider, int x, int z) {
+        return instance.getSkipQueue(new QueuedChunk(x, z, loader, world, provider));
     }
-    
-    public static Chunk syncChunkLoad(final World world, final AnvilChunkLoader loader, final ChunkProviderServer provider, final int x, final int z) {
-        try {
-			return ChunkIOExecutor.instance.getSkipQueue(new QueuedChunk(x, z, loader, world, provider));
-		} catch (RuntimeException e) {
-			e.printStackTrace();
-		} catch (Throwable e) {
-			e.printStackTrace();
-		}
-        return null;
+
+    public static void queueChunkLoad(World world, ChunkRegionLoader loader, ChunkProviderServer provider, int x, int z, Runnable runnable) {
+        instance.add(new QueuedChunk(x, z, loader, world, provider), runnable);
     }
-    
-    public static void queueChunkLoad(final World world, final AnvilChunkLoader loader, final ChunkProviderServer provider, final int x, final int z, final Runnable runnable) {
-        ChunkIOExecutor.instance.add(new QueuedChunk(x, z, loader, world, provider), runnable);
+
+    // Abuses the fact that hashCode and equals for QueuedChunk only use world and coords
+    public static void dropQueuedChunkLoad(World world, int x, int z, Runnable runnable) {
+        instance.drop(new QueuedChunk(x, z, null, world, null), runnable);
     }
-    
-    public static void dropQueuedChunkLoad(final World world, final int x, final int z, final Runnable runnable) {
-        ChunkIOExecutor.instance.drop(new QueuedChunk(x, z, null, world, null), runnable);
+
+    public static void adjustPoolSize(int players) {
+        int size = Math.max(BASE_THREADS, (int) Math.ceil(players / PLAYERS_PER_THREAD));
+        instance.setActiveThreads(size);
     }
-    
-    public static void adjustPoolSize(final int players) {
-        final int size = Math.max(1, (int)Math.ceil(players / 50));
-        ChunkIOExecutor.instance.setActiveThreads(size);
-    }
-    
+
     public static void tick() {
-        try {
-			ChunkIOExecutor.instance.finishActive();
-		} catch (RuntimeException e) {
-			e.printStackTrace();
-		} catch (Throwable e) {
-			e.printStackTrace();
-		}
+        instance.finishActive();
     }
 }

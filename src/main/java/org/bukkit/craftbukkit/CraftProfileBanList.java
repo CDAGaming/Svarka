@@ -1,88 +1,99 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit;
 
-import net.minecraft.server.management.UserList;
-import net.minecraft.server.management.UserListEntry;
-import java.util.Iterator;
-import com.google.common.collect.ImmutableSet;
-import java.util.Set;
 import java.io.IOException;
+import java.util.Date;
+import java.util.Set;
+
+import net.minecraft.server.GameProfileBanEntry;
+import net.minecraft.server.GameProfileBanList;
+import net.minecraft.server.JsonListEntry;
+import net.minecraft.server.MinecraftServer;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.Validate;
+
+import com.google.common.collect.ImmutableSet;
+import com.mojang.authlib.GameProfile;
 import java.util.logging.Level;
 import org.bukkit.Bukkit;
-import org.apache.commons.lang.StringUtils;
-import java.util.Date;
-import com.mojang.authlib.GameProfile;
-import net.minecraft.server.management.UserListBansEntry;
-import net.minecraft.server.MinecraftServer;
-import org.apache.commons.lang.Validate;
-import org.bukkit.BanEntry;
-import net.minecraft.server.management.UserListBans;
-import org.bukkit.BanList;
 
-public class CraftProfileBanList implements BanList
-{
-    private final UserListBans list;
-    
-    public CraftProfileBanList(final UserListBans list) {
+public class CraftProfileBanList implements org.bukkit.BanList {
+    private final GameProfileBanList list;
+
+    public CraftProfileBanList(GameProfileBanList list){
         this.list = list;
     }
-    
+
     @Override
-    public BanEntry getBanEntry(final String target) {
-        Validate.notNull((Object)target, "Target cannot be null");
-        final GameProfile profile = MinecraftServer.getServerInst().getPlayerProfileCache().getGameProfileForUsername(target);
+    public org.bukkit.BanEntry getBanEntry(String target) {
+        Validate.notNull(target, "Target cannot be null");
+
+        GameProfile profile = MinecraftServer.getServer().getUserCache().getProfile(target);
         if (profile == null) {
             return null;
         }
-        final UserListBansEntry entry = this.list.getEntry(profile);
+
+        GameProfileBanEntry entry = (GameProfileBanEntry) list.get(profile);
         if (entry == null) {
             return null;
         }
-        return new CraftProfileBanEntry(profile, entry, this.list);
+
+        return new CraftProfileBanEntry(profile, entry, list);
     }
-    
+
     @Override
-    public BanEntry addBan(final String target, final String reason, final Date expires, final String source) {
-        Validate.notNull((Object)target, "Ban target cannot be null");
-        final GameProfile profile = MinecraftServer.getServerInst().getPlayerProfileCache().getGameProfileForUsername(target);
+    public org.bukkit.BanEntry addBan(String target, String reason, Date expires, String source) {
+        Validate.notNull(target, "Ban target cannot be null");
+
+        GameProfile profile = MinecraftServer.getServer().getUserCache().getProfile(target);
         if (profile == null) {
             return null;
         }
-        final UserListBansEntry entry = new UserListBansEntry(profile, new Date(), StringUtils.isBlank(source) ? null : source, expires, StringUtils.isBlank(reason) ? null : reason);
-        (/*(UserList<K, UserListBansEntry>)*/this.list).addEntry(entry);
+
+        GameProfileBanEntry entry = new GameProfileBanEntry(profile, new Date(),
+                StringUtils.isBlank(source) ? null : source, expires,
+                StringUtils.isBlank(reason) ? null : reason);
+
+        list.add(entry);
+
         try {
-            this.list.writeChanges();
-        }
-        catch (IOException ex) {
+            list.save();
+        } catch (IOException ex) {
             Bukkit.getLogger().log(Level.SEVERE, "Failed to save banned-players.json, {0}", ex.getMessage());
         }
-        return new CraftProfileBanEntry(profile, entry, this.list);
+
+        return new CraftProfileBanEntry(profile, entry, list);
     }
-    
+
     @Override
-    public Set<BanEntry> getBanEntries() {
-        final ImmutableSet.Builder<BanEntry> builder = ImmutableSet.builder();
-        for (final UserListEntry entry : (/*(UserList<K, UserListBansEntry>)*/this.list).getValuesCB()) {
-            final GameProfile profile = (GameProfile) entry.getValue();
-            builder.add(new CraftProfileBanEntry(profile, (UserListBansEntry)entry, this.list));
+    public Set<org.bukkit.BanEntry> getBanEntries() {
+        ImmutableSet.Builder<org.bukkit.BanEntry> builder = ImmutableSet.builder();
+        
+        for (JsonListEntry entry : list.getValues()) {
+            GameProfile profile = (GameProfile) entry.getKey();
+            builder.add(new CraftProfileBanEntry(profile, (GameProfileBanEntry) entry, list));
         }
-        return (Set<BanEntry>)builder.build();
+
+        return builder.build();
     }
-    
+
     @Override
-    public boolean isBanned(final String target) {
-        Validate.notNull((Object)target, "Target cannot be null");
-        final GameProfile profile = MinecraftServer.getServerInst().getPlayerProfileCache().getGameProfileForUsername(target);
-        return profile != null && this.list.isBanned(profile);
+    public boolean isBanned(String target) {
+        Validate.notNull(target, "Target cannot be null");
+
+        GameProfile profile = MinecraftServer.getServer().getUserCache().getProfile(target);
+        if (profile == null) {
+            return false;
+        }
+
+        return list.isBanned(profile);
     }
-    
+
     @Override
-    public void pardon(final String target) {
-        Validate.notNull((Object)target, "Target cannot be null");
-        final GameProfile profile = MinecraftServer.getServerInst().getPlayerProfileCache().getGameProfileForUsername(target);
-        (/*(UserList<GameProfile, V>)*/this.list).removeEntry(profile);
+    public void pardon(String target) {
+        Validate.notNull(target, "Target cannot be null");
+
+        GameProfile profile = MinecraftServer.getServer().getUserCache().getProfile(target);
+        list.remove(profile);
     }
 }

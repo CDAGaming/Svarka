@@ -1,25 +1,22 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.passive.EntityWaterMob;
+import net.minecraft.server.EntityWaterAnimal;
+
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.WaterMob;
 
-public class CraftWaterMob extends CraftLivingEntity implements WaterMob
-{
-    public CraftWaterMob(final CraftServer server, final EntityWaterMob entity) {
+public class CraftWaterMob extends CraftLivingEntity implements WaterMob {
+
+    public CraftWaterMob(CraftServer server, EntityWaterAnimal entity) {
         super(server, entity);
     }
-    
+
     @Override
-    public EntityWaterMob getHandle() {
-        return (EntityWaterMob)this.entity;
+    public EntityWaterAnimal getHandle() {
+        return (EntityWaterAnimal) entity;
     }
-    
+
     @Override
     public String toString() {
         return "CraftWaterMob";

@@ -1,10 +1,8 @@
 package org.bukkit.block;
 
-import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.Nameable;
 
 /**
- * Represents a hopper.
+ * Represents a captured state of a hopper.
  */
-public interface Hopper extends BlockState, InventoryHolder {
-
-}
+public interface Hopper extends Container, Nameable { }

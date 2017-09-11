@@ -1,134 +1,110 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import org.bukkit.entity.EntityType;
+import net.minecraft.server.EntityBoat;
 import org.bukkit.TreeSpecies;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.item.EntityBoat;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Boat;
+import org.bukkit.entity.EntityType;
 
-public class CraftBoat extends CraftVehicle implements Boat
-{
-    public CraftBoat(final CraftServer server, final EntityBoat entity) {
+public class CraftBoat extends CraftVehicle implements Boat {
+
+    public CraftBoat(CraftServer server, EntityBoat entity) {
         super(server, entity);
     }
-    
+
     @Override
     public TreeSpecies getWoodType() {
-        return getTreeSpecies(this.getHandle().getBoatType());
+        return getTreeSpecies(getHandle().getType());
     }
-    
+
     @Override
-    public void setWoodType(final TreeSpecies species) {
-        this.getHandle().setBoatType(getBoatType(species));
+    public void setWoodType(TreeSpecies species) {
+        getHandle().setType(getBoatType(species));
     }
-    
-    @Override
+
     public double getMaxSpeed() {
-        return this.getHandle().maxSpeed;
+        return getHandle().maxSpeed;
     }
-    
-    @Override
-    public void setMaxSpeed(final double speed) {
-        if (speed >= 0.0) {
-            this.getHandle().maxSpeed = speed;
+
+    public void setMaxSpeed(double speed) {
+        if (speed >= 0D) {
+            getHandle().maxSpeed = speed;
         }
     }
-    
-    @Override
+
     public double getOccupiedDeceleration() {
-        return this.getHandle().occupiedDeceleration;
+        return getHandle().occupiedDeceleration;
     }
-    
-    @Override
-    public void setOccupiedDeceleration(final double speed) {
-        if (speed >= 0.0) {
-            this.getHandle().occupiedDeceleration = speed;
+
+    public void setOccupiedDeceleration(double speed) {
+        if (speed >= 0D) {
+            getHandle().occupiedDeceleration = speed;
         }
     }
-    
-    @Override
+
     public double getUnoccupiedDeceleration() {
-        return this.getHandle().unoccupiedDeceleration;
+        return getHandle().unoccupiedDeceleration;
     }
-    
-    @Override
-    public void setUnoccupiedDeceleration(final double speed) {
-        this.getHandle().unoccupiedDeceleration = speed;
+
+    public void setUnoccupiedDeceleration(double speed) {
+        getHandle().unoccupiedDeceleration = speed;
     }
-    
-    @Override
+
     public boolean getWorkOnLand() {
-        return this.getHandle().landBoats;
+        return getHandle().landBoats;
     }
-    
-    @Override
-    public void setWorkOnLand(final boolean workOnLand) {
-        this.getHandle().landBoats = workOnLand;
+
+    public void setWorkOnLand(boolean workOnLand) {
+        getHandle().landBoats = workOnLand;
     }
-    
+
     @Override
     public EntityBoat getHandle() {
-        return (EntityBoat)this.entity;
+        return (EntityBoat) entity;
     }
-    
+
     @Override
     public String toString() {
         return "CraftBoat";
     }
-    
-    @Override
+
     public EntityType getType() {
         return EntityType.BOAT;
     }
-    
-    public static TreeSpecies getTreeSpecies(final EntityBoat.Type boatType) {
+
+    public static TreeSpecies getTreeSpecies(EntityBoat.EnumBoatType boatType) {
         switch (boatType) {
-            case SPRUCE: {
+            case SPRUCE:
                 return TreeSpecies.REDWOOD;
-            }
-            case BIRCH: {
+            case BIRCH:
                 return TreeSpecies.BIRCH;
-            }
-            case JUNGLE: {
+            case JUNGLE:
                 return TreeSpecies.JUNGLE;
-            }
-            case ACACIA: {
+            case ACACIA:
                 return TreeSpecies.ACACIA;
-            }
-            case DARK_OAK: {
+            case DARK_OAK:
                 return TreeSpecies.DARK_OAK;
-            }
-            default: {
+            case OAK:
+            default:
                 return TreeSpecies.GENERIC;
-            }
         }
     }
-    
-    public static EntityBoat.Type getBoatType(final TreeSpecies species) {
+
+    public static EntityBoat.EnumBoatType getBoatType(TreeSpecies species) {
         switch (species) {
-            case REDWOOD: {
-                return EntityBoat.Type.SPRUCE;
-            }
-            case BIRCH: {
-                return EntityBoat.Type.BIRCH;
-            }
-            case JUNGLE: {
-                return EntityBoat.Type.JUNGLE;
-            }
-            case ACACIA: {
-                return EntityBoat.Type.ACACIA;
-            }
-            case DARK_OAK: {
-                return EntityBoat.Type.DARK_OAK;
-            }
-            default: {
-                return EntityBoat.Type.OAK;
-            }
+            case REDWOOD:
+                return EntityBoat.EnumBoatType.SPRUCE;
+            case BIRCH:
+                return EntityBoat.EnumBoatType.BIRCH;
+            case JUNGLE:
+                return EntityBoat.EnumBoatType.JUNGLE;
+            case ACACIA:
+                return EntityBoat.EnumBoatType.ACACIA;
+            case DARK_OAK:
+                return EntityBoat.EnumBoatType.DARK_OAK;
+            case GENERIC:
+            default:
+                return EntityBoat.EnumBoatType.OAK;
         }
     }
 }

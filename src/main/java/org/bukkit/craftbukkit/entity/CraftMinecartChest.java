@@ -1,38 +1,31 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import org.bukkit.entity.EntityType;
-import org.bukkit.inventory.Inventory;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.entity.item.EntityMinecart;
-import net.minecraft.entity.item.EntityMinecartChest;
+import net.minecraft.server.EntityMinecartChest;
+
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
-import org.bukkit.entity.StorageMinecart;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.minecart.StorageMinecart;
+import org.bukkit.inventory.Inventory;
 
-public class CraftMinecartChest extends CraftMinecart implements StorageMinecart
-{
+@SuppressWarnings("deprecation")
+public class CraftMinecartChest extends CraftMinecart implements StorageMinecart {
     private final CraftInventory inventory;
-    
-    public CraftMinecartChest(final CraftServer server, final EntityMinecartChest entity) {
+
+    public CraftMinecartChest(CraftServer server, EntityMinecartChest entity) {
         super(server, entity);
-        this.inventory = new CraftInventory(entity);
+        inventory = new CraftInventory(entity);
     }
-    
-    @Override
+
     public Inventory getInventory() {
-        return this.inventory;
+        return inventory;
     }
-    
+
     @Override
     public String toString() {
-        return "CraftMinecartChest{inventory=" + this.inventory + '}';
+        return "CraftMinecartChest{" + "inventory=" + inventory + '}';
     }
-    
-    @Override
+
     public EntityType getType() {
         return EntityType.MINECART_CHEST;
     }

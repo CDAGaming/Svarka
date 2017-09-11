@@ -1,72 +1,46 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.util;
 
 import java.util.concurrent.ExecutionException;
 
-public abstract class Waitable<T> implements Runnable
-{
-    Throwable t;
-    T value;
-    Status status;
-    
-    public Waitable() {
-        this.t = null;
-        this.value = null;
-        this.status = Status.WAITING;
+
+public abstract class Waitable<T> implements Runnable {
+    private enum Status {
+        WAITING,
+        RUNNING,
+        FINISHED,
     }
-    
-    @Override
+    Throwable t = null;
+    T value = null;
+    Status status = Status.WAITING;
+
     public final void run() {
         synchronized (this) {
-            if (this.status != Status.WAITING) {
-                throw new IllegalStateException("Invalid state " + this.status);
+            if (status != Status.WAITING) {
+                throw new IllegalStateException("Invalid state " + status);
             }
-            this.status = Status.RUNNING;
+            status = Status.RUNNING;
         }
         try {
-            this.value = this.evaluate();
-        }
-        catch (Throwable t) {
+            value = evaluate();
+        } catch (Throwable t) {
             this.t = t;
+        } finally {
             synchronized (this) {
-                this.status = Status.FINISHED;
+                status = Status.FINISHED;
                 this.notifyAll();
             }
-        }
-        finally {
-            synchronized (this) {
-                this.status = Status.FINISHED;
-                this.notifyAll();
-            }
-        }
-        synchronized (this) {
-            this.status = Status.FINISHED;
-            this.notifyAll();
         }
     }
-    
+
     protected abstract T evaluate();
-    
+
     public synchronized T get() throws InterruptedException, ExecutionException {
-        while (this.status != Status.FINISHED) {
+        while (status != Status.FINISHED) {
             this.wait();
         }
-        if (this.t != null) {
-            throw new ExecutionException(this.t);
+        if (t != null) {
+            throw new ExecutionException(t);
         }
-        return this.value;
-    }
-    
-    private enum Status
-    {
-        WAITING("WAITING", 0), 
-        RUNNING("RUNNING", 1), 
-        FINISHED("FINISHED", 2);
-        
-        private Status(final String s, final int n) {
-        }
+        return value;
     }
 }

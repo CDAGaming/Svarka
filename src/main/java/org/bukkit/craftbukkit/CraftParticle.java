@@ -1,44 +1,41 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit;
 
-import org.bukkit.material.MaterialData;
-import org.bukkit.inventory.ItemStack;
-import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.server.Block;
+import net.minecraft.server.EnumParticle;
+import net.minecraft.server.IBlockData;
 import org.bukkit.Particle;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.material.MaterialData;
 
-public class CraftParticle
-{
-    public static EnumParticleTypes toNMS(final Particle bukkit) {
-        return EnumParticleTypes.valueOf(bukkit.name());
+public class CraftParticle {
+
+    public static EnumParticle toNMS(Particle bukkit) {
+        return EnumParticle.valueOf(bukkit.name());
     }
-    
-    public static Particle toBukkit(final EnumParticleTypes nms) {
+
+    public static Particle toBukkit(EnumParticle nms) {
         return Particle.valueOf(nms.name());
     }
-    
-    public static int[] toData(final Particle particle, final Object obj) {
+
+    public static int[] toData(Particle particle, Object obj) {
         if (particle.getDataType().equals(Void.class)) {
             return new int[0];
         }
         if (particle.getDataType().equals(ItemStack.class)) {
             if (obj == null) {
-                return new int[2];
+                return new int[]{0, 0};
             }
-            final ItemStack itemStack = (ItemStack)obj;
-            return new int[] { itemStack.getType().getId(), itemStack.getDurability() };
+            ItemStack itemStack = (ItemStack) obj;
+            return new int[]{itemStack.getType().getId(), itemStack.getDurability()};
         }
-        else {
-            if (!particle.getDataType().equals(MaterialData.class)) {
-                throw new IllegalArgumentException(particle.getDataType().toString());
-            }
+        if (particle.getDataType().equals(MaterialData.class)) {
             if (obj == null) {
-                return new int[1];
+                return new int[]{0};
             }
-            final MaterialData data = (MaterialData)obj;
-            return new int[] { data.getItemTypeId() + (data.getData() << 12) };
+            MaterialData data = (MaterialData) obj;
+            return new int[]{data.getItemTypeId() + ((int)(data.getData()) << 12)};
         }
+        throw new IllegalArgumentException(particle.getDataType().toString());
     }
 }

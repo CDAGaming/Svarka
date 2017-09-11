@@ -1,167 +1,187 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.inventory;
 
-import com.google.common.collect.ImmutableMap;
-import org.bukkit.Material;
-import net.minecraft.nbt.NBTBase;
 import java.util.Map;
-import java.util.UUID;
-import net.minecraft.nbt.NBTUtil;
-import net.minecraft.nbt.NBTTagCompound;
-import com.mojang.authlib.GameProfile;
+
+import net.minecraft.server.GameProfileSerializer;
+import net.minecraft.server.NBTBase;
+import net.minecraft.server.NBTTagCompound;
+
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
+import org.bukkit.craftbukkit.inventory.CraftMetaItem.SerializableMeta;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.inventory.meta.SkullMeta;
 
-//@DelegateDeserialization(SerializableMeta.class)
-class CraftMetaSkull extends CraftMetaItem implements SkullMeta
-{
-    static final ItemMetaKey SKULL_PROFILE;
-    static final ItemMetaKey SKULL_OWNER;
+import com.google.common.collect.ImmutableMap.Builder;
+import com.mojang.authlib.GameProfile;
+
+@DelegateDeserialization(SerializableMeta.class)
+class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
+
+    @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
+    static final ItemMetaKey SKULL_PROFILE = new ItemMetaKey("SkullProfile");
+
+    static final ItemMetaKey SKULL_OWNER = new ItemMetaKey("SkullOwner", "skull-owner");
     static final int MAX_OWNER_LENGTH = 16;
+
     private GameProfile profile;
-    
-    static {
-        SKULL_PROFILE = new ItemMetaKey("SkullProfile");
-        SKULL_OWNER = new ItemMetaKey("SkullOwner", "skull-owner");
-    }
-    
-    CraftMetaSkull(final CraftMetaItem meta) {
+
+    CraftMetaSkull(CraftMetaItem meta) {
         super(meta);
         if (!(meta instanceof CraftMetaSkull)) {
             return;
         }
-        final CraftMetaSkull skullMeta = (CraftMetaSkull)meta;
+        CraftMetaSkull skullMeta = (CraftMetaSkull) meta;
         this.profile = skullMeta.profile;
     }
-    
-    CraftMetaSkull(final NBTTagCompound tag) {
+
+    CraftMetaSkull(NBTTagCompound tag) {
         super(tag);
-        if (tag.hasKey(CraftMetaSkull.SKULL_OWNER.NBT, 10)) {
-            this.profile = NBTUtil.readGameProfileFromNBT(tag.getCompoundTag(CraftMetaSkull.SKULL_OWNER.NBT));
-        }
-        else if (tag.hasKey(CraftMetaSkull.SKULL_OWNER.NBT, 8) && !tag.getString(CraftMetaSkull.SKULL_OWNER.NBT).isEmpty()) {
-            this.profile = new GameProfile((UUID)null, tag.getString(CraftMetaSkull.SKULL_OWNER.NBT));
+
+        if (tag.hasKeyOfType(SKULL_OWNER.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
+            profile = GameProfileSerializer.deserialize(tag.getCompound(SKULL_OWNER.NBT));
+        } else if (tag.hasKeyOfType(SKULL_OWNER.NBT, CraftMagicNumbers.NBT.TAG_STRING) && !tag.getString(SKULL_OWNER.NBT).isEmpty()) {
+            profile = new GameProfile(null, tag.getString(SKULL_OWNER.NBT));
         }
     }
-    
-    CraftMetaSkull(final Map<String, Object> map) {
+
+    CraftMetaSkull(Map<String, Object> map) {
         super(map);
-        if (this.profile == null) {
-            this.setOwner(SerializableMeta.getString(map, CraftMetaSkull.SKULL_OWNER.BUKKIT, true));
+        if (profile == null) {
+            setOwner(SerializableMeta.getString(map, SKULL_OWNER.BUKKIT, true));
         }
     }
-    
+
     @Override
-    void deserializeInternal(final NBTTagCompound tag) {
-        if (tag.hasKey(CraftMetaSkull.SKULL_PROFILE.NBT, 10)) {
-            this.profile = NBTUtil.readGameProfileFromNBT(tag.getCompoundTag(CraftMetaSkull.SKULL_PROFILE.NBT));
+    void deserializeInternal(NBTTagCompound tag) {
+        if (tag.hasKeyOfType(SKULL_PROFILE.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
+            profile = GameProfileSerializer.deserialize(tag.getCompound(SKULL_PROFILE.NBT));
         }
     }
-    
+
     @Override
     void serializeInternal(final Map<String, NBTBase> internalTags) {
-        if (this.profile != null) {
-            final NBTTagCompound nbtData = new NBTTagCompound();
-            NBTUtil.writeGameProfile(nbtData, this.profile);
-            internalTags.put(CraftMetaSkull.SKULL_PROFILE.NBT, nbtData);
+        if (profile != null) {
+            NBTTagCompound nbtData = new NBTTagCompound();
+            GameProfileSerializer.serialize(nbtData, profile);
+            internalTags.put(SKULL_PROFILE.NBT, nbtData);
         }
     }
-    
+
     @Override
-    void applyToItem(final NBTTagCompound tag) {
+    void applyToItem(NBTTagCompound tag) {
         super.applyToItem(tag);
-        if (this.profile != null) {
-            final NBTTagCompound owner = new NBTTagCompound();
-            NBTUtil.writeGameProfile(owner, this.profile);
-            tag.setTag(CraftMetaSkull.SKULL_OWNER.NBT, owner);
+
+        if (profile != null) {
+            NBTTagCompound owner = new NBTTagCompound();
+            GameProfileSerializer.serialize(owner, profile);
+            tag.set(SKULL_OWNER.NBT, owner);
         }
     }
-    
+
     @Override
     boolean isEmpty() {
-        return super.isEmpty() && this.isSkullEmpty();
+        return super.isEmpty() && isSkullEmpty();
     }
-    
+
     boolean isSkullEmpty() {
-        return this.profile == null;
+        return profile == null;
     }
-    
+
     @Override
-    boolean applicableTo(final Material type) {
-        switch (type) {
-            case SKULL_ITEM: {
+    boolean applicableTo(Material type) {
+        switch(type) {
+            case SKULL_ITEM:
                 return true;
-            }
-            default: {
+            default:
                 return false;
-            }
         }
     }
-    
+
     @Override
     public CraftMetaSkull clone() {
-        return (CraftMetaSkull)super.clone();
+        return (CraftMetaSkull) super.clone();
     }
-    
-    @Override
+
     public boolean hasOwner() {
-        return this.profile != null && this.profile.getName() != null;
+        return profile != null && profile.getName() != null;
     }
-    
-    @Override
+
     public String getOwner() {
-        return this.hasOwner() ? this.profile.getName() : null;
+        return hasOwner() ? profile.getName() : null;
     }
-    
+
     @Override
-    public boolean setOwner(final String name) {
-        if (name != null && name.length() > 16) {
+    public OfflinePlayer getOwningPlayer() {
+        if (hasOwner()) {
+            if (profile.getId() != null) {
+                return Bukkit.getOfflinePlayer(profile.getId());
+            }
+
+            if (profile.getName() != null) {
+                return Bukkit.getOfflinePlayer(profile.getName());
+            }
+        }
+
+        return null;
+    }
+
+    public boolean setOwner(String name) {
+        if (name != null && name.length() > MAX_OWNER_LENGTH) {
             return false;
         }
+
         if (name == null) {
-            this.profile = null;
+            profile = null;
+        } else {
+            profile = new GameProfile(null, name);
         }
-        else {
-            this.profile = new GameProfile((UUID)null, name);
-        }
+
         return true;
     }
-    
+
+    @Override
+    public boolean setOwningPlayer(OfflinePlayer owner) {
+        profile = (owner == null) ? null : new GameProfile(owner.getUniqueId(), owner.getName());
+
+        return true;
+    }
+
     @Override
     int applyHash() {
-        int hash;
-        final int original = hash = super.applyHash();
-        if (this.hasOwner()) {
-            hash = 61 * hash + this.profile.hashCode();
+        final int original;
+        int hash = original = super.applyHash();
+        if (hasOwner()) {
+            hash = 61 * hash + profile.hashCode();
         }
-        return (original != hash) ? (CraftMetaSkull.class.hashCode() ^ hash) : hash;
+        return original != hash ? CraftMetaSkull.class.hashCode() ^ hash : hash;
     }
-    
+
     @Override
-    boolean equalsCommon(final CraftMetaItem meta) {
+    boolean equalsCommon(CraftMetaItem meta) {
         if (!super.equalsCommon(meta)) {
             return false;
         }
         if (meta instanceof CraftMetaSkull) {
-            final CraftMetaSkull that = (CraftMetaSkull)meta;
-            return this.hasOwner() ? (that.hasOwner() && this.profile.equals((Object)that.profile)) : (!that.hasOwner());
+            CraftMetaSkull that = (CraftMetaSkull) meta;
+
+            return (this.hasOwner() ? that.hasOwner() && this.profile.equals(that.profile) : !that.hasOwner());
         }
         return true;
     }
-    
+
     @Override
-    boolean notUncommon(final CraftMetaItem meta) {
-        return super.notUncommon(meta) && (meta instanceof CraftMetaSkull || this.isSkullEmpty());
+    boolean notUncommon(CraftMetaItem meta) {
+        return super.notUncommon(meta) && (meta instanceof CraftMetaSkull || isSkullEmpty());
     }
-    
+
     @Override
-    ImmutableMap.Builder<String, Object> serialize(final ImmutableMap.Builder<String, Object> builder) {
+    Builder<String, Object> serialize(Builder<String, Object> builder) {
         super.serialize(builder);
-        if (this.hasOwner()) {
-            return (ImmutableMap.Builder<String, Object>)builder.put(CraftMetaSkull.SKULL_OWNER.BUKKIT, this.profile.getName());
+        if (hasOwner()) {
+            return builder.put(SKULL_OWNER.BUKKIT, this.profile.getName());
         }
         return builder;
     }

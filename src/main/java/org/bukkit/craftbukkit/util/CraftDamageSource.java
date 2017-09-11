@@ -1,28 +1,31 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.util;
 
-import net.minecraft.util.DamageSource;
+import net.minecraft.server.DamageSource;
 
-public final class CraftDamageSource extends DamageSource
-{
+// Util class to create custom DamageSources.
+public final class CraftDamageSource extends DamageSource {
     public static DamageSource copyOf(final DamageSource original) {
-        final CraftDamageSource newSource = new CraftDamageSource(original.damageType);
-        if (original.isUnblockable()) {
-            newSource.setDamageBypassesArmor();
+        CraftDamageSource newSource = new CraftDamageSource(original.translationIndex);
+
+        // Check ignoresArmor
+        if (original.ignoresArmor()) {
+            newSource.setIgnoreArmor();
         }
-        if (original.isMagicDamage()) {
-            newSource.setMagicDamage();
+
+        // Check magic
+        if (original.isMagic()) {
+            newSource.setMagic();
         }
+
+        // Check fire
         if (original.isExplosion()) {
-            newSource.setFireDamage();
+            newSource.setExplosion();
         }
+
         return newSource;
     }
-    
-    private CraftDamageSource(final String identifier) {
+
+    private CraftDamageSource(String identifier) {
         super(identifier);
     }
 }

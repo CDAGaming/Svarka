@@ -1,1452 +1,1483 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import org.bukkit.metadata.MetadataStoreBase;
-import net.minecraft.network.play.server.SPacketParticles;
-import org.bukkit.craftbukkit.CraftParticle;
-import org.bukkit.Particle;
-import net.minecraft.network.play.server.SPacketTitle;
 import com.google.common.base.Preconditions;
-import net.minecraft.entity.ai.attributes.ModifiableAttributeInstance;
-import net.minecraft.entity.ai.attributes.IAttribute;
-import net.minecraft.entity.ai.attributes.RangedAttribute;
-import net.minecraft.network.play.server.SPacketUpdateHealth;
-import net.minecraft.entity.ai.attributes.IAttributeInstance;
-import net.minecraft.network.play.server.SPacketEntityProperties;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.ai.attributes.AttributeMap;
-import net.minecraft.network.NetHandlerPlayServer;
-import org.bukkit.scoreboard.Scoreboard;
-import org.bukkit.craftbukkit.scoreboard.CraftScoreboard;
-import net.minecraft.inventory.Container;
-import org.bukkit.inventory.InventoryView;
-import java.util.List;
-import org.bukkit.metadata.MetadataValue;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.io.BaseEncoding;
+import com.mojang.authlib.GameProfile;
+import io.netty.buffer.Unpooled;
+
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.ByteArrayOutputStream;
-import com.google.common.collect.ImmutableSet;
-import org.bukkit.event.player.PlayerUnregisterChannelEvent;
-import org.bukkit.event.player.PlayerRegisterChannelEvent;
-import org.bukkit.plugin.messaging.StandardMessenger;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.conversations.ConversationCanceller;
+
+import net.minecraft.server.*;
+import net.minecraft.server.PacketPlayOutTitle.EnumTitleAction;
+
+import org.apache.commons.lang.Validate;
+import org.apache.commons.lang.NotImplementedException;
+import org.bukkit.*;
+import org.bukkit.Achievement;
+import org.bukkit.BanList;
+import org.bukkit.Statistic;
+import org.bukkit.Material;
+import org.bukkit.Statistic.Type;
+import org.bukkit.World;
+import org.bukkit.configuration.serialization.DelegateDeserialization;
+import org.bukkit.conversations.Conversation;
 import org.bukkit.conversations.ConversationAbandonedEvent;
 import org.bukkit.conversations.ManuallyAbandonedConversationCanceller;
-import org.bukkit.conversations.Conversation;
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.nbt.NBTTagCompound;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import net.minecraft.entity.EntityTracker;
-import net.minecraft.entity.EntityTrackerEntry;
-import net.minecraft.network.play.server.SPacketChangeGameState;
-import net.minecraft.world.GameType;
-import net.minecraft.entity.Entity;
-import org.bukkit.event.player.PlayerGameModeChangeEvent;
-import org.bukkit.GameMode;
-import java.util.Date;
-import org.bukkit.BanList;
-import org.bukkit.WeatherType;
-import org.bukkit.entity.EntityType;
-import org.bukkit.Statistic;
-import net.minecraft.stats.StatBase;
-import org.bukkit.craftbukkit.CraftStatistic;
-import org.bukkit.Achievement;
-import net.minecraft.world.WorldServer;
-import ru.svarka.inventory.CBContainer;
-
-import org.bukkit.event.Event;
-import org.bukkit.event.player.PlayerTeleportEvent;
-import java.util.Collection;
-import org.bukkit.craftbukkit.map.RenderData;
-import net.minecraft.network.play.server.SPacketMaps;
-import org.bukkit.map.MapCursor;
-import net.minecraft.util.math.Vec4b;
-import java.util.ArrayList;
-import org.bukkit.craftbukkit.map.CraftMapView;
-import org.bukkit.map.MapView;
-import org.apache.commons.lang.NotImplementedException;
-import net.minecraft.tileentity.TileEntitySign;
+import org.bukkit.craftbukkit.CraftParticle;
 import org.bukkit.craftbukkit.block.CraftSign;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
-import net.minecraft.world.World;
-import net.minecraft.network.play.server.SPacketBlockChange;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.Material;
-import org.bukkit.craftbukkit.CraftEffect;
-import org.apache.commons.lang.Validate;
-import net.minecraft.network.play.server.SPacketEffect;
-import org.bukkit.Effect;
-import net.minecraft.network.play.server.SPacketCustomPayload;
-import net.minecraft.network.PacketBuffer;
-import io.netty.buffer.Unpooled;
-import net.minecraft.network.play.server.SPacketCustomSound;
-import org.bukkit.Sound;
-import org.bukkit.Note;
-import org.bukkit.Instrument;
-import net.minecraft.network.play.server.SPacketSoundEffect;
-import net.minecraft.util.SoundCategory;
-import org.bukkit.craftbukkit.CraftSound;
-import org.bukkit.command.CommandSender;
-import net.minecraft.network.play.server.SPacketSpawnPosition;
-import net.minecraft.util.math.BlockPos;
-import org.bukkit.Location;
-import org.bukkit.OfflinePlayer;
-import java.util.Iterator;
-import net.minecraft.network.play.server.SPacketPlayerListItem;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.network.Packet;
-import net.minecraft.network.play.server.SPacketChat;
-import org.bukkit.craftbukkit.util.CraftChatMessage;
-import java.net.SocketAddress;
-import java.net.InetSocketAddress;
-import com.mojang.authlib.GameProfile;
-import java.util.HashSet;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import org.bukkit.craftbukkit.CraftServer;
-import java.util.UUID;
-import java.util.Set;
 import org.bukkit.craftbukkit.conversations.ConversationTracker;
+import org.bukkit.craftbukkit.CraftEffect;
 import org.bukkit.craftbukkit.CraftOfflinePlayer;
-import org.bukkit.configuration.serialization.DelegateDeserialization;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftSound;
+import org.bukkit.craftbukkit.CraftStatistic;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.advancement.CraftAdvancement;
+import org.bukkit.craftbukkit.advancement.CraftAdvancementProgress;
+import org.bukkit.craftbukkit.map.CraftMapView;
+import org.bukkit.craftbukkit.map.RenderData;
+import org.bukkit.craftbukkit.scoreboard.CraftScoreboard;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerGameModeChangeEvent;
+import org.bukkit.event.player.PlayerRegisterChannelEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.event.player.PlayerUnregisterChannelEvent;
+import org.bukkit.inventory.InventoryView.Property;
+import org.bukkit.map.MapCursor;
+import org.bukkit.map.MapView;
+import org.bukkit.metadata.MetadataValue;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.messaging.StandardMessenger;
+import org.bukkit.scoreboard.Scoreboard;
 
 @DelegateDeserialization(CraftOfflinePlayer.class)
-public class CraftPlayer extends CraftHumanEntity implements Player
-{
-    private long firstPlayed;
-    private long lastPlayed;
-    private boolean hasPlayedBefore;
-    private final ConversationTracker conversationTracker;
-    private final Set<String> channels;
-    private final Set<UUID> hiddenPlayers;
-    private int hash;
-    private double health;
-    private boolean scaledHealth;
-    private double healthScale;
-    
-    public CraftPlayer(final CraftServer server, final EntityPlayerMP entity) {
+public class CraftPlayer extends CraftHumanEntity implements Player {
+    private long firstPlayed = 0;
+    private long lastPlayed = 0;
+    private boolean hasPlayedBefore = false;
+    private final ConversationTracker conversationTracker = new ConversationTracker();
+    private final Set<String> channels = new HashSet<String>();
+    private final Set<UUID> hiddenPlayers = new HashSet<UUID>();
+    private int hash = 0;
+    private double health = 20;
+    private boolean scaledHealth = false;
+    private double healthScale = 20;
+
+    public CraftPlayer(CraftServer server, EntityPlayer entity) {
         super(server, entity);
-        this.firstPlayed = 0L;
-        this.lastPlayed = 0L;
-        this.hasPlayedBefore = false;
-        this.conversationTracker = new ConversationTracker();
-        this.channels = new HashSet<String>();
-        this.hiddenPlayers = new HashSet<UUID>();
-        this.hash = 0;
-        this.health = 20.0;
-        this.scaledHealth = false;
-        this.healthScale = 20.0;
-        this.firstPlayed = System.currentTimeMillis();
+
+        firstPlayed = System.currentTimeMillis();
     }
-    
+
     public GameProfile getProfile() {
-        return this.getHandle().getGameProfile();
+        return getHandle().getProfile();
     }
-    
+
     @Override
     public boolean isOp() {
-        return this.server.getHandle().canSendCommands(this.getProfile());
+        return server.getHandle().isOp(getProfile());
     }
-    
+
     @Override
-    public void setOp(final boolean value) {
-        if (value == this.isOp()) {
-            return;
-        }
+    public void setOp(boolean value) {
+        if (value == isOp()) return;
+
         if (value) {
-            this.server.getHandle().addOp(this.getProfile());
+            server.getHandle().addOp(getProfile());
+        } else {
+            server.getHandle().removeOp(getProfile());
         }
-        else {
-            this.server.getHandle().removeOp(this.getProfile());
-        }
-        this.perm.recalculatePermissions();
+
+        perm.recalculatePermissions();
     }
-    
-    @Override
+
     public boolean isOnline() {
-        return this.server.getPlayer(this.getUniqueId()) != null;
+        return server.getPlayer(getUniqueId()) != null;
     }
-    
-    @Override
+
     public InetSocketAddress getAddress() {
-        if (this.getHandle().connection == null) {
+        if (getHandle().playerConnection == null) return null;
+
+        SocketAddress addr = getHandle().playerConnection.networkManager.getSocketAddress();
+        if (addr instanceof InetSocketAddress) {
+            return (InetSocketAddress) addr;
+        } else {
             return null;
         }
-        final SocketAddress addr = this.getHandle().connection.netManager.getRemoteAddress();
-        if (addr instanceof InetSocketAddress) {
-            return (InetSocketAddress)addr;
-        }
-        return null;
     }
-    
+
     @Override
     public double getEyeHeight() {
-        return this.getEyeHeight(false);
+        return getEyeHeight(false);
     }
-    
+
     @Override
-    public double getEyeHeight(final boolean ignoreSneaking) {
+    public double getEyeHeight(boolean ignoreSneaking) {
         if (ignoreSneaking) {
-            return 1.62;
-        }
-        if (this.isSneaking()) {
-            return 1.54;
-        }
-        return 1.62;
-    }
-    
-    @Override
-    public void sendRawMessage(final String message) {
-        if (this.getHandle().connection == null) {
-            return;
-        }
-        ITextComponent[] fromString;
-        for (int length = (fromString = CraftChatMessage.fromString(message)).length, i = 0; i < length; ++i) {
-            final ITextComponent component = fromString[i];
-            this.getHandle().connection.sendPacket(new SPacketChat(component));
+            return 1.62D;
+        } else {
+            if (isSneaking()) {
+                return 1.54D;
+            } else {
+                return 1.62D;
+            }
         }
     }
-    
+
     @Override
-    public void sendMessage(final String message) {
-        if (!this.conversationTracker.isConversingModaly()) {
+    public void sendRawMessage(String message) {
+        if (getHandle().playerConnection == null) return;
+
+        for (IChatBaseComponent component : CraftChatMessage.fromString(message)) {
+            getHandle().playerConnection.sendPacket(new PacketPlayOutChat(component));
+        }
+    }
+
+    @Override
+    public void sendMessage(String message) {
+        if (!conversationTracker.isConversingModaly()) {
             this.sendRawMessage(message);
         }
     }
-    
+
     @Override
-    public void sendMessage(final String[] messages) {
-        for (final String message : messages) {
-            this.sendMessage(message);
+    public void sendMessage(String[] messages) {
+        for (String message : messages) {
+            sendMessage(message);
         }
     }
-    
+
     @Override
     public String getDisplayName() {
-        return this.getHandle().displayName;
+        return getHandle().displayName;
     }
-    
+
     @Override
     public void setDisplayName(final String name) {
-        this.getHandle().displayName = ((name == null) ? this.getName() : name);
+        getHandle().displayName = name == null ? getName() : name;
     }
-    
+
     @Override
     public String getPlayerListName() {
-        return (this.getHandle().listName == null) ? this.getName() : CraftChatMessage.fromComponent(this.getHandle().listName);
+        return getHandle().listName == null ? getName() : CraftChatMessage.fromComponent(getHandle().listName, EnumChatFormat.WHITE);
     }
-    
+
     @Override
     public void setPlayerListName(String name) {
         if (name == null) {
-            name = this.getName();
+            name = getName();
         }
-        this.getHandle().listName = (name.equals(this.getName()) ? null : CraftChatMessage.fromString(name)[0]);
-        for (final EntityPlayerMP player : this.server.getHandle().playerEntityList) {
+        getHandle().listName = name.equals(getName()) ? null : CraftChatMessage.fromString(name)[0];
+        for (EntityPlayer player : (List<EntityPlayer>)server.getHandle().players) {
             if (player.getBukkitEntity().canSee(this)) {
-                player.connection.sendPacket(new SPacketPlayerListItem(SPacketPlayerListItem.Action.UPDATE_DISPLAY_NAME, new EntityPlayerMP[] { this.getHandle() }));
+                player.playerConnection.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.UPDATE_DISPLAY_NAME, getHandle()));
             }
         }
     }
-    
+
     @Override
-    public boolean equals(final Object obj) {
+    public boolean equals(Object obj) {
         if (!(obj instanceof OfflinePlayer)) {
             return false;
         }
-        final OfflinePlayer other = (OfflinePlayer)obj;
-        if (this.getUniqueId() == null || other.getUniqueId() == null) {
+        OfflinePlayer other = (OfflinePlayer) obj;
+        if ((this.getUniqueId() == null) || (other.getUniqueId() == null)) {
             return false;
         }
-        final boolean uuidEquals = this.getUniqueId().equals(other.getUniqueId());
+
+        boolean uuidEquals = this.getUniqueId().equals(other.getUniqueId());
         boolean idEquals = true;
+
         if (other instanceof CraftPlayer) {
-            idEquals = (this.getEntityId() == ((CraftPlayer)other).getEntityId());
+            idEquals = this.getEntityId() == ((CraftPlayer) other).getEntityId();
         }
+
         return uuidEquals && idEquals;
     }
-    
+
     @Override
-    public void kickPlayer(final String message) {
-        if (this.getHandle().connection == null) {
-            return;
-        }
-        this.getHandle().connection.kickPlayerFromServer((message == null) ? "" : message);
+    public void kickPlayer(String message) {
+        if (getHandle().playerConnection == null) return;
+
+        getHandle().playerConnection.disconnect(message == null ? "" : message);
     }
-    
+
     @Override
-    public void setCompassTarget(final Location loc) {
-        if (this.getHandle().connection == null) {
-            return;
-        }
-        this.getHandle().connection.sendPacket(new SPacketSpawnPosition(new BlockPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ())));
+    public void setCompassTarget(Location loc) {
+        if (getHandle().playerConnection == null) return;
+
+        // Do not directly assign here, from the packethandler we'll assign it.
+        getHandle().playerConnection.sendPacket(new PacketPlayOutSpawnPosition(new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ())));
     }
-    
+
     @Override
     public Location getCompassTarget() {
-        return this.getHandle().compassTarget;
+        return getHandle().compassTarget;
     }
-    
+
     @Override
-    public void chat(final String msg) {
-        if (this.getHandle().connection == null) {
-            return;
-        }
-        this.getHandle().connection.chat(msg, false);
+    public void chat(String msg) {
+        if (getHandle().playerConnection == null) return;
+
+        getHandle().playerConnection.chat(msg, false);
     }
-    
+
     @Override
-    public boolean performCommand(final String command) {
-        return this.server.dispatchCommand(this, command);
+    public boolean performCommand(String command) {
+        return server.dispatchCommand(this, command);
     }
-    
+
     @Override
-    public void playNote(final Location loc, final byte instrument, final byte note) {
-        if (this.getHandle().connection == null) {
-            return;
-        }
+    public void playNote(Location loc, byte instrument, byte note) {
+        if (getHandle().playerConnection == null) return;
+
         String instrumentName = null;
         switch (instrument) {
-            case 0: {
-                instrumentName = "harp";
-                break;
-            }
-            case 1: {
-                instrumentName = "basedrum";
-                break;
-            }
-            case 2: {
-                instrumentName = "snare";
-                break;
-            }
-            case 3: {
-                instrumentName = "hat";
-                break;
-            }
-            case 4: {
-                instrumentName = "bass";
-                break;
-            }
+        case 0:
+            instrumentName = "harp";
+            break;
+        case 1:
+            instrumentName = "basedrum";
+            break;
+        case 2:
+            instrumentName = "snare";
+            break;
+        case 3:
+            instrumentName = "hat";
+            break;
+        case 4:
+            instrumentName = "bass";
+            break;
+        case 5:
+            instrumentName = "flute";
+            break;
+        case 6:
+            instrumentName = "bell";
+            break;
+        case 7:
+            instrumentName = "guitar";
+            break;
+        case 8:
+            instrumentName = "chime";
+            break;
+        case 9:
+            instrumentName = "xylophone";
+            break;
         }
-        final float f = (float)Math.pow(2.0, (note - 12.0) / 12.0);
-        this.getHandle().connection.sendPacket(new SPacketSoundEffect(CraftSound.getSoundEffect("block.note." + instrumentName), SoundCategory.MUSIC, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, f));
+
+        float f = (float) Math.pow(2.0D, (note - 12.0D) / 12.0D);
+        getHandle().playerConnection.sendPacket(new PacketPlayOutNamedSoundEffect(CraftSound.getSoundEffect("block.note." + instrumentName), net.minecraft.server.SoundCategory.MUSIC, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, f));
     }
-    
+
     @Override
-    public void playNote(final Location loc, final Instrument instrument, final Note note) {
-        if (this.getHandle().connection == null) {
-            return;
-        }
+    public void playNote(Location loc, Instrument instrument, Note note) {
+        if (getHandle().playerConnection == null) return;
+
         String instrumentName = null;
         switch (instrument.ordinal()) {
-            case 0: {
+            case 0:
                 instrumentName = "harp";
                 break;
-            }
-            case 1: {
+            case 1:
                 instrumentName = "basedrum";
                 break;
-            }
-            case 2: {
+            case 2:
                 instrumentName = "snare";
                 break;
-            }
-            case 3: {
+            case 3:
                 instrumentName = "hat";
                 break;
-            }
-            case 4: {
+            case 4:
                 instrumentName = "bass";
                 break;
-            }
+            case 5:
+                instrumentName = "flute";
+                break;
+            case 6:
+                instrumentName = "bell";
+                break;
+            case 7:
+                instrumentName = "guitar";
+                break;
+            case 8:
+                instrumentName = "chime";
+                break;
+            case 9:
+                instrumentName = "xylophone";
+                break;
         }
-        final float f = (float)Math.pow(2.0, (note.getId() - 12.0) / 12.0);
-        this.getHandle().connection.sendPacket(new SPacketSoundEffect(CraftSound.getSoundEffect("block.note." + instrumentName), SoundCategory.MUSIC, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, f));
+        float f = (float) Math.pow(2.0D, (note.getId() - 12.0D) / 12.0D);
+        getHandle().playerConnection.sendPacket(new PacketPlayOutNamedSoundEffect(CraftSound.getSoundEffect("block.note." + instrumentName), net.minecraft.server.SoundCategory.MUSIC, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, f));
     }
-    
+
     @Override
-    public void playSound(final Location loc, final Sound sound, final float volume, final float pitch) {
-        if (loc == null || sound == null || this.getHandle().connection == null) {
-            return;
-        }
-        final SPacketSoundEffect packet = new SPacketSoundEffect(CraftSound.getSoundEffect(CraftSound.getSound(sound)), SoundCategory.MASTER, loc.getX(), loc.getY(), loc.getZ(), volume, pitch);
-        this.getHandle().connection.sendPacket(packet);
+    public void playSound(Location loc, Sound sound, float volume, float pitch) {
+        playSound(loc, sound, org.bukkit.SoundCategory.MASTER, volume, pitch);
     }
-    
+
     @Override
-    public void playSound(final Location loc, final String sound, final float volume, final float pitch) {
-        if (loc == null || sound == null || this.getHandle().connection == null) {
-            return;
-        }
-        final SPacketCustomSound packet = new SPacketCustomSound(sound, SoundCategory.MASTER, loc.getX(), loc.getY(), loc.getZ(), volume, pitch);
-        this.getHandle().connection.sendPacket(packet);
+    public void playSound(Location loc, String sound, float volume, float pitch) {
+        playSound(loc, sound, org.bukkit.SoundCategory.MASTER, volume, pitch);
     }
-    
+
     @Override
-    public void stopSound(final Sound sound) {
-        this.stopSound(CraftSound.getSound(sound));
+    public void playSound(Location loc, Sound sound, org.bukkit.SoundCategory category, float volume, float pitch) {
+        if (loc == null || sound == null || category == null || getHandle().playerConnection == null) return;
+
+        PacketPlayOutNamedSoundEffect packet = new PacketPlayOutNamedSoundEffect(CraftSound.getSoundEffect(CraftSound.getSound(sound)), net.minecraft.server.SoundCategory.valueOf(category.name()), loc.getX(), loc.getY(), loc.getZ(), volume, pitch);
+        getHandle().playerConnection.sendPacket(packet);
     }
-    
+
     @Override
-    public void stopSound(final String sound) {
-        if (this.getHandle().connection == null) {
-            return;
-        }
-        final PacketBuffer packetdataserializer = new PacketBuffer(Unpooled.buffer());
-        packetdataserializer.writeString(sound);
-        packetdataserializer.writeString("");
-        this.getHandle().connection.sendPacket(new SPacketCustomPayload("MC|StopSound", packetdataserializer));
+    public void playSound(Location loc, String sound, org.bukkit.SoundCategory category, float volume, float pitch) {
+        if (loc == null || sound == null || category == null || getHandle().playerConnection == null) return;
+
+        PacketPlayOutCustomSoundEffect packet = new PacketPlayOutCustomSoundEffect(sound, net.minecraft.server.SoundCategory.valueOf(category.name()), loc.getX(), loc.getY(), loc.getZ(), volume, pitch);
+        getHandle().playerConnection.sendPacket(packet);
     }
-    
+
     @Override
-    public void playEffect(final Location loc, final Effect effect, final int data) {
-        if (this.getHandle().connection == null) {
-            return;
-        }
-        final int packetData = effect.getId();
-        final SPacketEffect packet = new SPacketEffect(packetData, new BlockPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()), data, false);
-        this.getHandle().connection.sendPacket(packet);
+    public void stopSound(Sound sound) {
+        stopSound(sound, null);
     }
-    
+
     @Override
-    public <T> void playEffect(final Location loc, final Effect effect, final T data) {
+    public void stopSound(String sound) {
+        stopSound(sound, null);
+    }
+
+    @Override
+    public void stopSound(Sound sound, org.bukkit.SoundCategory category) {
+        stopSound(CraftSound.getSound(sound), category);
+    }
+
+    @Override
+    public void stopSound(String sound, org.bukkit.SoundCategory category) {
+        if (getHandle().playerConnection == null) return;
+        PacketDataSerializer packetdataserializer = new PacketDataSerializer(Unpooled.buffer());
+
+        packetdataserializer.a(category == null ? "" : net.minecraft.server.SoundCategory.valueOf(category.name()).a());
+        packetdataserializer.a(sound);
+        getHandle().playerConnection.sendPacket(new PacketPlayOutCustomPayload("MC|StopSound", packetdataserializer));
+    }
+
+    @Override
+    public void playEffect(Location loc, Effect effect, int data) {
+        if (getHandle().playerConnection == null) return;
+
+        int packetData = effect.getId();
+        PacketPlayOutWorldEvent packet = new PacketPlayOutWorldEvent(packetData, new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()), data, false);
+        getHandle().playerConnection.sendPacket(packet);
+    }
+
+    @Override
+    public <T> void playEffect(Location loc, Effect effect, T data) {
         if (data != null) {
             Validate.isTrue(effect.getData() != null && effect.getData().isAssignableFrom(data.getClass()), "Wrong kind of data for this effect!");
-        }
-        else {
+        } else {
             Validate.isTrue(effect.getData() == null, "Wrong kind of data for this effect!");
         }
-        final int datavalue = (data == null) ? 0 : CraftEffect.getDataValue(effect, data);
-        this.playEffect(loc, effect, datavalue);
+
+        int datavalue = data == null ? 0 : CraftEffect.getDataValue(effect, data);
+        playEffect(loc, effect, datavalue);
     }
-    
+
     @Override
-    public void sendBlockChange(final Location loc, final Material material, final byte data) {
-        this.sendBlockChange(loc, material.getId(), data);
+    public void sendBlockChange(Location loc, Material material, byte data) {
+        sendBlockChange(loc, material.getId(), data);
     }
-    
+
     @Override
-    public void sendBlockChange(final Location loc, final int material, final byte data) {
-        if (this.getHandle().connection == null) {
+    public void sendBlockChange(Location loc, int material, byte data) {
+        if (getHandle().playerConnection == null) return;
+
+        PacketPlayOutBlockChange packet = new PacketPlayOutBlockChange(((CraftWorld) loc.getWorld()).getHandle(), new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
+
+        packet.block = CraftMagicNumbers.getBlock(material).fromLegacyData(data);
+        getHandle().playerConnection.sendPacket(packet);
+    }
+
+    @Override
+    public void sendSignChange(Location loc, String[] lines) {
+        if (getHandle().playerConnection == null) {
             return;
         }
-        final SPacketBlockChange packet = new SPacketBlockChange(((CraftWorld)loc.getWorld()).getHandle(), new BlockPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
-        packet.blockState = CraftMagicNumbers.getBlock(material).getStateFromMeta(data);
-        this.getHandle().connection.sendPacket(packet);
-    }
-    
-    @Override
-    public void sendSignChange(final Location loc, String[] lines) {
-        if (this.getHandle().connection == null) {
-            return;
-        }
+
         if (lines == null) {
             lines = new String[4];
         }
-        Validate.notNull((Object)loc, "Location can not be null");
+
+        Validate.notNull(loc, "Location can not be null");
         if (lines.length < 4) {
             throw new IllegalArgumentException("Must have at least 4 lines");
         }
-        final ITextComponent[] components = CraftSign.sanitizeLines(lines);
-        final TileEntitySign sign = new TileEntitySign();
-        sign.setPos(new BlockPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
-        System.arraycopy(components, 0, sign.signText, 0, sign.signText.length);
-        this.getHandle().connection.sendPacket(sign.getUpdatePacket());
+
+        IChatBaseComponent[] components = CraftSign.sanitizeLines(lines);
+        TileEntitySign sign = new TileEntitySign();
+        sign.setPosition(new BlockPosition(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
+        System.arraycopy(components, 0, sign.lines, 0, sign.lines.length);
+
+        getHandle().playerConnection.sendPacket(sign.getUpdatePacket());
     }
-    
+
     @Override
-    public boolean sendChunkChange(final Location loc, final int sx, final int sy, final int sz, final byte[] data) {
-        if (this.getHandle().connection == null) {
+    public boolean sendChunkChange(Location loc, int sx, int sy, int sz, byte[] data) {
+        if (getHandle().playerConnection == null) return false;
+
+        /*
+        int x = loc.getBlockX();
+        int y = loc.getBlockY();
+        int z = loc.getBlockZ();
+
+        int cx = x >> 4;
+        int cz = z >> 4;
+
+        if (sx <= 0 || sy <= 0 || sz <= 0) {
             return false;
         }
-        throw new NotImplementedException("Chunk changes do not yet work");
-    }
-    
-    @Override
-    public void sendMap(final MapView map) {
-        if (this.getHandle().connection == null) {
-            return;
+
+        if ((x + sx - 1) >> 4 != cx || (z + sz - 1) >> 4 != cz || y < 0 || y + sy > 128) {
+            return false;
         }
-        final RenderData data = ((CraftMapView)map).render(this);
-        final Collection<Vec4b> icons = new ArrayList<Vec4b>();
-        for (final MapCursor cursor : data.cursors) {
+
+        if (data.length != (sx * sy * sz * 5) / 2) {
+            return false;
+        }
+
+        Packet51MapChunk packet = new Packet51MapChunk(x, y, z, sx, sy, sz, data);
+
+        getHandle().playerConnection.sendPacket(packet);
+
+        return true;
+        */
+
+        throw new NotImplementedException("Chunk changes do not yet work"); // TODO: Chunk changes.
+    }
+
+    @Override
+    public void sendMap(MapView map) {
+        if (getHandle().playerConnection == null) return;
+
+        RenderData data = ((CraftMapView) map).render(this);
+        Collection<MapIcon> icons = new ArrayList<MapIcon>();
+        for (MapCursor cursor : data.cursors) {
             if (cursor.isVisible()) {
-                icons.add(new Vec4b(cursor.getRawType(), cursor.getX(), cursor.getY(), cursor.getDirection()));
+                icons.add(new MapIcon(MapIcon.Type.a(cursor.getRawType()), cursor.getX(), cursor.getY(), cursor.getDirection()));
             }
         }
-        final SPacketMaps packet = new SPacketMaps(map.getId(), map.getScale().getValue(), true, icons, data.buffer, 0, 0, 128, 128);
-        this.getHandle().connection.sendPacket(packet);
+
+        PacketPlayOutMap packet = new PacketPlayOutMap(map.getId(), map.getScale().getValue(), true, icons, data.buffer, 0, 0, 128, 128);
+        getHandle().playerConnection.sendPacket(packet);
     }
-    
+
     @Override
-    public boolean teleport(final Location location, final PlayerTeleportEvent.TeleportCause cause) {
-        final EntityPlayerMP entity = this.getHandle();
-        if (this.getHealth() == 0.0 || entity.isDead) {
+    public boolean teleport(Location location, PlayerTeleportEvent.TeleportCause cause) {
+        EntityPlayer entity = getHandle();
+
+        if (getHealth() == 0 || entity.dead) {
             return false;
         }
-        if (entity.connection == null) {
+
+        if (entity.playerConnection == null) {
+           return false;
+        }
+
+        if (entity.isVehicle()) {
             return false;
         }
-        if (entity.isBeingRidden()) {
-            return false;
-        }
+
+        // From = Players current Location
         Location from = this.getLocation();
-        final PlayerTeleportEvent event = new PlayerTeleportEvent(this, from, location, cause);
-        this.server.getPluginManager().callEvent(event);
+        // To = Players new Location if Teleport is Successful
+        Location to = location;
+        // Create & Call the Teleport Event.
+        PlayerTeleportEvent event = new PlayerTeleportEvent(this, from, to, cause);
+        server.getPluginManager().callEvent(event);
+
+        // Return False to inform the Plugin that the Teleport was unsuccessful/cancelled.
         if (event.isCancelled()) {
             return false;
         }
-        entity.dismountRidingEntity();
+
+        // If this player is riding another entity, we must dismount before teleporting.
+        entity.stopRiding();
+
+        // Update the From Location
         from = event.getFrom();
-        final Location to = event.getTo();
-        final WorldServer fromWorld = ((CraftWorld)from.getWorld()).getHandle();
-        final WorldServer toWorld = ((CraftWorld)to.getWorld()).getHandle();
-        if (this.getHandle().openContainer != this.getHandle().inventoryContainer) {
-            this.getHandle().closeScreen();
+        // Grab the new To Location dependent on whether the event was cancelled.
+        to = event.getTo();
+        // Grab the To and From World Handles.
+        WorldServer fromWorld = ((CraftWorld) from.getWorld()).getHandle();
+        WorldServer toWorld = ((CraftWorld) to.getWorld()).getHandle();
+
+        // Close any foreign inventory
+        if (getHandle().activeContainer != getHandle().defaultContainer) {
+            getHandle().closeInventory();
         }
+
+        // Check if the fromWorld and toWorld are the same.
         if (fromWorld == toWorld) {
-            entity.connection.teleport(to);
-        }
-        else {
-            this.server.getHandle().moveToWorld(entity, toWorld.dimension, true, to, true);
+            entity.playerConnection.teleport(to);
+        } else {
+            server.getHandle().moveToWorld(entity, toWorld.dimension, true, to, true);
         }
         return true;
     }
-    
+
     @Override
-    public void setSneaking(final boolean sneak) {
-        this.getHandle().setSneaking(sneak);
+    public void setSneaking(boolean sneak) {
+        getHandle().setSneaking(sneak);
     }
-    
+
     @Override
     public boolean isSneaking() {
-        return this.getHandle().isSneaking();
+        return getHandle().isSneaking();
     }
-    
+
     @Override
     public boolean isSprinting() {
-        return this.getHandle().isSprinting();
+        return getHandle().isSprinting();
     }
-    
+
     @Override
-    public void setSprinting(final boolean sprinting) {
-        this.getHandle().setSprinting(sprinting);
+    public void setSprinting(boolean sprinting) {
+        getHandle().setSprinting(sprinting);
     }
-    
+
     @Override
     public void loadData() {
-        this.server.getHandle().playerNBTManagerObj.readPlayerData(this.getHandle());
+        server.getHandle().playerFileData.load(getHandle());
     }
-    
+
     @Override
     public void saveData() {
-        this.server.getHandle().playerNBTManagerObj.writePlayerData(this.getHandle());
+        server.getHandle().playerFileData.save(getHandle());
     }
-    
+
     @Deprecated
     @Override
     public void updateInventory() {
-        this.getHandle().sendContainerToPlayer(this.getHandle().openContainer);
+        getHandle().updateInventory(getHandle().activeContainer);
     }
-    
+
     @Override
-    public void setSleepingIgnored(final boolean isSleeping) {
-        this.getHandle().fauxSleeping = isSleeping;
-        ((CraftWorld)this.getWorld()).getHandle().checkSleepStatus();
+    public void setSleepingIgnored(boolean isSleeping) {
+        getHandle().fauxSleeping = isSleeping;
+        ((CraftWorld) getWorld()).getHandle().checkSleepStatus();
     }
-    
+
     @Override
     public boolean isSleepingIgnored() {
-        return this.getHandle().fauxSleeping;
+        return getHandle().fauxSleeping;
     }
-    
+
     @Override
-    public void awardAchievement(final Achievement achievement) {
-        Validate.notNull((Object)achievement, "Achievement cannot be null");
-        if (achievement.hasParent() && !this.hasAchievement(achievement.getParent())) {
-            this.awardAchievement(achievement.getParent());
-        }
-        this.getHandle().getStatFile().unlockAchievement(this.getHandle(), CraftStatistic.getNMSAchievement(achievement), 1);
-        this.getHandle().getStatFile().sendAchievements(this.getHandle());
+    public void awardAchievement(Achievement achievement) {
+        throw new UnsupportedOperationException("Not supported in this Minecraft version.");
     }
-    
+
     @Override
-    public void removeAchievement(final Achievement achievement) {
-        Validate.notNull((Object)achievement, "Achievement cannot be null");
-        Achievement[] values;
-        for (int length = (values = Achievement.values()).length, i = 0; i < length; ++i) {
-            final Achievement achieve = values[i];
-            if (achieve.getParent() == achievement && this.hasAchievement(achieve)) {
-                this.removeAchievement(achieve);
-            }
-        }
-        this.getHandle().getStatFile().unlockAchievement(this.getHandle(), CraftStatistic.getNMSAchievement(achievement), 0);
+    public void removeAchievement(Achievement achievement) {
+        throw new UnsupportedOperationException("Not supported in this Minecraft version.");
     }
-    
+
     @Override
-    public boolean hasAchievement(final Achievement achievement) {
-        Validate.notNull((Object)achievement, "Achievement cannot be null");
-        return this.getHandle().getStatFile().hasAchievementUnlocked(CraftStatistic.getNMSAchievement(achievement));
+    public boolean hasAchievement(Achievement achievement) {
+        throw new UnsupportedOperationException("Not supported in this Minecraft version.");
     }
-    
+
     @Override
-    public void incrementStatistic(final Statistic statistic) {
-        this.incrementStatistic(statistic, 1);
+    public void incrementStatistic(Statistic statistic) {
+        incrementStatistic(statistic, 1);
     }
-    
+
     @Override
-    public void decrementStatistic(final Statistic statistic) {
-        this.decrementStatistic(statistic, 1);
+    public void decrementStatistic(Statistic statistic) {
+        decrementStatistic(statistic, 1);
     }
-    
+
     @Override
-    public int getStatistic(final Statistic statistic) {
-        Validate.notNull((Object)statistic, "Statistic cannot be null");
-        Validate.isTrue(statistic.getType() == Statistic.Type.UNTYPED, "Must supply additional paramater for this statistic");
-        return this.getHandle().getStatFile().readStat(CraftStatistic.getNMSStatistic(statistic));
+    public int getStatistic(Statistic statistic) {
+        Validate.notNull(statistic, "Statistic cannot be null");
+        Validate.isTrue(statistic.getType() == Type.UNTYPED, "Must supply additional paramater for this statistic");
+        return getHandle().getStatisticManager().getStatisticValue(CraftStatistic.getNMSStatistic(statistic));
     }
-    
+
     @Override
-    public void incrementStatistic(final Statistic statistic, final int amount) {
+    public void incrementStatistic(Statistic statistic, int amount) {
         Validate.isTrue(amount > 0, "Amount must be greater than 0");
-        this.setStatistic(statistic, this.getStatistic(statistic) + amount);
+        setStatistic(statistic, getStatistic(statistic) + amount);
     }
-    
+
     @Override
-    public void decrementStatistic(final Statistic statistic, final int amount) {
+    public void decrementStatistic(Statistic statistic, int amount) {
         Validate.isTrue(amount > 0, "Amount must be greater than 0");
-        this.setStatistic(statistic, this.getStatistic(statistic) - amount);
+        setStatistic(statistic, getStatistic(statistic) - amount);
     }
-    
+
     @Override
-    public void setStatistic(final Statistic statistic, final int newValue) {
-        Validate.notNull((Object)statistic, "Statistic cannot be null");
-        Validate.isTrue(statistic.getType() == Statistic.Type.UNTYPED, "Must supply additional paramater for this statistic");
+    public void setStatistic(Statistic statistic, int newValue) {
+        Validate.notNull(statistic, "Statistic cannot be null");
+        Validate.isTrue(statistic.getType() == Type.UNTYPED, "Must supply additional paramater for this statistic");
         Validate.isTrue(newValue >= 0, "Value must be greater than or equal to 0");
-        final StatBase nmsStatistic = CraftStatistic.getNMSStatistic(statistic);
-        this.getHandle().getStatFile().unlockAchievement(this.getHandle(), nmsStatistic, newValue);
+        net.minecraft.server.Statistic nmsStatistic = CraftStatistic.getNMSStatistic(statistic);
+        getHandle().getStatisticManager().setStatistic(getHandle(), nmsStatistic, newValue);
     }
-    
+
     @Override
-    public void incrementStatistic(final Statistic statistic, final Material material) {
-        this.incrementStatistic(statistic, material, 1);
+    public void incrementStatistic(Statistic statistic, Material material) {
+        incrementStatistic(statistic, material, 1);
     }
-    
+
     @Override
-    public void decrementStatistic(final Statistic statistic, final Material material) {
-        this.decrementStatistic(statistic, material, 1);
+    public void decrementStatistic(Statistic statistic, Material material) {
+        decrementStatistic(statistic, material, 1);
     }
-    
+
     @Override
-    public int getStatistic(final Statistic statistic, final Material material) {
-        Validate.notNull((Object)statistic, "Statistic cannot be null");
-        Validate.notNull((Object)material, "Material cannot be null");
-        Validate.isTrue(statistic.getType() == Statistic.Type.BLOCK || statistic.getType() == Statistic.Type.ITEM, "This statistic does not take a Material parameter");
-        final StatBase nmsStatistic = CraftStatistic.getMaterialStatistic(statistic, material);
-        Validate.notNull((Object)nmsStatistic, "The supplied Material does not have a corresponding statistic");
-        return this.getHandle().getStatFile().readStat(nmsStatistic);
+    public int getStatistic(Statistic statistic, Material material) {
+        Validate.notNull(statistic, "Statistic cannot be null");
+        Validate.notNull(material, "Material cannot be null");
+        Validate.isTrue(statistic.getType() == Type.BLOCK || statistic.getType() == Type.ITEM, "This statistic does not take a Material parameter");
+        net.minecraft.server.Statistic nmsStatistic = CraftStatistic.getMaterialStatistic(statistic, material);
+        Validate.notNull(nmsStatistic, "The supplied Material does not have a corresponding statistic");
+        return getHandle().getStatisticManager().getStatisticValue(nmsStatistic);
     }
-    
+
     @Override
-    public void incrementStatistic(final Statistic statistic, final Material material, final int amount) {
+    public void incrementStatistic(Statistic statistic, Material material, int amount) {
         Validate.isTrue(amount > 0, "Amount must be greater than 0");
-        this.setStatistic(statistic, material, this.getStatistic(statistic, material) + amount);
+        setStatistic(statistic, material, getStatistic(statistic, material) + amount);
     }
-    
+
     @Override
-    public void decrementStatistic(final Statistic statistic, final Material material, final int amount) {
+    public void decrementStatistic(Statistic statistic, Material material, int amount) {
         Validate.isTrue(amount > 0, "Amount must be greater than 0");
-        this.setStatistic(statistic, material, this.getStatistic(statistic, material) - amount);
+        setStatistic(statistic, material, getStatistic(statistic, material) - amount);
     }
-    
+
     @Override
-    public void setStatistic(final Statistic statistic, final Material material, final int newValue) {
-        Validate.notNull((Object)statistic, "Statistic cannot be null");
-        Validate.notNull((Object)material, "Material cannot be null");
+    public void setStatistic(Statistic statistic, Material material, int newValue) {
+        Validate.notNull(statistic, "Statistic cannot be null");
+        Validate.notNull(material, "Material cannot be null");
         Validate.isTrue(newValue >= 0, "Value must be greater than or equal to 0");
-        Validate.isTrue(statistic.getType() == Statistic.Type.BLOCK || statistic.getType() == Statistic.Type.ITEM, "This statistic does not take a Material parameter");
-        final StatBase nmsStatistic = CraftStatistic.getMaterialStatistic(statistic, material);
-        Validate.notNull((Object)nmsStatistic, "The supplied Material does not have a corresponding statistic");
-        this.getHandle().getStatFile().unlockAchievement(this.getHandle(), nmsStatistic, newValue);
+        Validate.isTrue(statistic.getType() == Type.BLOCK || statistic.getType() == Type.ITEM, "This statistic does not take a Material parameter");
+        net.minecraft.server.Statistic nmsStatistic = CraftStatistic.getMaterialStatistic(statistic, material);
+        Validate.notNull(nmsStatistic, "The supplied Material does not have a corresponding statistic");
+        getHandle().getStatisticManager().setStatistic(getHandle(), nmsStatistic, newValue);
     }
-    
+
     @Override
-    public void incrementStatistic(final Statistic statistic, final EntityType entityType) {
-        this.incrementStatistic(statistic, entityType, 1);
+    public void incrementStatistic(Statistic statistic, EntityType entityType) {
+        incrementStatistic(statistic, entityType, 1);
     }
-    
+
     @Override
-    public void decrementStatistic(final Statistic statistic, final EntityType entityType) {
-        this.decrementStatistic(statistic, entityType, 1);
+    public void decrementStatistic(Statistic statistic, EntityType entityType) {
+        decrementStatistic(statistic, entityType, 1);
     }
-    
+
     @Override
-    public int getStatistic(final Statistic statistic, final EntityType entityType) {
-        Validate.notNull((Object)statistic, "Statistic cannot be null");
-        Validate.notNull((Object)entityType, "EntityType cannot be null");
-        Validate.isTrue(statistic.getType() == Statistic.Type.ENTITY, "This statistic does not take an EntityType parameter");
-        final StatBase nmsStatistic = CraftStatistic.getEntityStatistic(statistic, entityType);
-        Validate.notNull((Object)nmsStatistic, "The supplied EntityType does not have a corresponding statistic");
-        return this.getHandle().getStatFile().readStat(nmsStatistic);
+    public int getStatistic(Statistic statistic, EntityType entityType) {
+        Validate.notNull(statistic, "Statistic cannot be null");
+        Validate.notNull(entityType, "EntityType cannot be null");
+        Validate.isTrue(statistic.getType() == Type.ENTITY, "This statistic does not take an EntityType parameter");
+        net.minecraft.server.Statistic nmsStatistic = CraftStatistic.getEntityStatistic(statistic, entityType);
+        Validate.notNull(nmsStatistic, "The supplied EntityType does not have a corresponding statistic");
+        return getHandle().getStatisticManager().getStatisticValue(nmsStatistic);
     }
-    
+
     @Override
-    public void incrementStatistic(final Statistic statistic, final EntityType entityType, final int amount) {
+    public void incrementStatistic(Statistic statistic, EntityType entityType, int amount) {
         Validate.isTrue(amount > 0, "Amount must be greater than 0");
-        this.setStatistic(statistic, entityType, this.getStatistic(statistic, entityType) + amount);
+        setStatistic(statistic, entityType, getStatistic(statistic, entityType) + amount);
     }
-    
+
     @Override
-    public void decrementStatistic(final Statistic statistic, final EntityType entityType, final int amount) {
+    public void decrementStatistic(Statistic statistic, EntityType entityType, int amount) {
         Validate.isTrue(amount > 0, "Amount must be greater than 0");
-        this.setStatistic(statistic, entityType, this.getStatistic(statistic, entityType) - amount);
+        setStatistic(statistic, entityType, getStatistic(statistic, entityType) - amount);
     }
-    
+
     @Override
-    public void setStatistic(final Statistic statistic, final EntityType entityType, final int newValue) {
-        Validate.notNull((Object)statistic, "Statistic cannot be null");
-        Validate.notNull((Object)entityType, "EntityType cannot be null");
+    public void setStatistic(Statistic statistic, EntityType entityType, int newValue) {
+        Validate.notNull(statistic, "Statistic cannot be null");
+        Validate.notNull(entityType, "EntityType cannot be null");
         Validate.isTrue(newValue >= 0, "Value must be greater than or equal to 0");
-        Validate.isTrue(statistic.getType() == Statistic.Type.ENTITY, "This statistic does not take an EntityType parameter");
-        final StatBase nmsStatistic = CraftStatistic.getEntityStatistic(statistic, entityType);
-        Validate.notNull((Object)nmsStatistic, "The supplied EntityType does not have a corresponding statistic");
-        this.getHandle().getStatFile().unlockAchievement(this.getHandle(), nmsStatistic, newValue);
+        Validate.isTrue(statistic.getType() == Type.ENTITY, "This statistic does not take an EntityType parameter");
+        net.minecraft.server.Statistic nmsStatistic = CraftStatistic.getEntityStatistic(statistic, entityType);
+        Validate.notNull(nmsStatistic, "The supplied EntityType does not have a corresponding statistic");
+        getHandle().getStatisticManager().setStatistic(getHandle(), nmsStatistic, newValue);
     }
-    
+
     @Override
-    public void setPlayerTime(final long time, final boolean relative) {
-        this.getHandle().timeOffset = time;
-        this.getHandle().relativeTime = relative;
+    public void setPlayerTime(long time, boolean relative) {
+        getHandle().timeOffset = time;
+        getHandle().relativeTime = relative;
     }
-    
+
     @Override
     public long getPlayerTimeOffset() {
-        return this.getHandle().timeOffset;
+        return getHandle().timeOffset;
     }
-    
+
     @Override
     public long getPlayerTime() {
-        return this.getHandle().getPlayerTime();
+        return getHandle().getPlayerTime();
     }
-    
+
     @Override
     public boolean isPlayerTimeRelative() {
-        return this.getHandle().relativeTime;
+        return getHandle().relativeTime;
     }
-    
+
     @Override
     public void resetPlayerTime() {
-        this.setPlayerTime(0L, true);
+        setPlayerTime(0, true);
     }
-    
+
     @Override
-    public void setPlayerWeather(final WeatherType type) {
-        this.getHandle().setPlayerWeather(type, true);
+    public void setPlayerWeather(WeatherType type) {
+        getHandle().setPlayerWeather(type, true);
     }
-    
+
     @Override
     public WeatherType getPlayerWeather() {
-        return this.getHandle().getPlayerWeather();
+        return getHandle().getPlayerWeather();
     }
-    
+
     @Override
     public void resetPlayerWeather() {
-        this.getHandle().resetPlayerWeather();
+        getHandle().resetPlayerWeather();
     }
-    
+
     @Override
     public boolean isBanned() {
-        return this.server.getBanList(BanList.Type.NAME).isBanned(this.getName());
+        return server.getBanList(BanList.Type.NAME).isBanned(getName());
     }
-    
-    @Override
-    public void setBanned(final boolean value) {
-        if (value) {
-            this.server.getBanList(BanList.Type.NAME).addBan(this.getName(), null, null, null);
-        }
-        else {
-            this.server.getBanList(BanList.Type.NAME).pardon(this.getName());
-        }
-    }
-    
+
     @Override
     public boolean isWhitelisted() {
-        return this.server.getHandle().getWhitelistedPlayers().isWhitelisted(this.getProfile());
+        return server.getHandle().getWhitelist().isWhitelisted(getProfile());
     }
-    
+
     @Override
-    public void setWhitelisted(final boolean value) {
+    public void setWhitelisted(boolean value) {
         if (value) {
-            this.server.getHandle().addWhitelistedPlayer(this.getProfile());
-        }
-        else {
-            this.server.getHandle().removePlayerFromWhitelist(this.getProfile());
+            server.getHandle().addWhitelist(getProfile());
+        } else {
+            server.getHandle().removeWhitelist(getProfile());
         }
     }
-    
+
     @Override
-    public void setGameMode(final GameMode mode) {
-        if (this.getHandle().connection == null) {
-            return;
-        }
+    public void setGameMode(GameMode mode) {
+        if (getHandle().playerConnection == null) return;
+
         if (mode == null) {
             throw new IllegalArgumentException("Mode cannot be null");
         }
-        if (mode != this.getGameMode()) {
-            final PlayerGameModeChangeEvent event = new PlayerGameModeChangeEvent(this, mode);
-            this.server.getPluginManager().callEvent(event);
-            if (event.isCancelled()) {
-                return;
-            }
-            this.getHandle().setSpectatingEntity(this.getHandle());
-            this.getHandle().interactionManager.setGameType(GameType.getByID(mode.getValue()));
-            this.getHandle().fallDistance = 0.0f;
-            this.getHandle().connection.sendPacket(new SPacketChangeGameState(3, mode.getValue()));
-        }
+
+        getHandle().a(EnumGamemode.getById(mode.getValue()));
     }
-    
+
     @Override
     public GameMode getGameMode() {
-        return GameMode.getByValue(this.getHandle().interactionManager.getGameType().getID());
+        return GameMode.getByValue(getHandle().playerInteractManager.getGameMode().getId());
     }
-    
+
     @Override
-    public void giveExp(final int exp) {
-        this.getHandle().addExperience(exp);
+    public void giveExp(int exp) {
+        getHandle().giveExp(exp);
     }
-    
+
     @Override
-    public void giveExpLevels(final int levels) {
-        this.getHandle().addExperienceLevel(levels);
+    public void giveExpLevels(int levels) {
+        getHandle().levelDown(levels);
     }
-    
+
     @Override
     public float getExp() {
-        return this.getHandle().experience;
+        return getHandle().exp;
     }
-    
+
     @Override
-    public void setExp(final float exp) {
-        this.getHandle().experience = exp;
-        this.getHandle().lastExperience = -1;
+    public void setExp(float exp) {
+        Preconditions.checkArgument(exp >= 0.0 && exp <= 1.0, "Experience progress must be between 0.0 and 1.0 (%s)", exp);
+        getHandle().exp = exp;
+        getHandle().lastSentExp = -1;
     }
-    
+
     @Override
     public int getLevel() {
-        return this.getHandle().experienceLevel;
+        return getHandle().expLevel;
     }
-    
+
     @Override
-    public void setLevel(final int level) {
-        this.getHandle().experienceLevel = level;
-        this.getHandle().lastExperience = -1;
+    public void setLevel(int level) {
+        getHandle().expLevel = level;
+        getHandle().lastSentExp = -1;
     }
-    
+
     @Override
     public int getTotalExperience() {
-        return this.getHandle().experienceTotal;
+        return getHandle().expTotal;
     }
-    
+
     @Override
-    public void setTotalExperience(final int exp) {
-        this.getHandle().experienceTotal = exp;
+    public void setTotalExperience(int exp) {
+        getHandle().expTotal = exp;
     }
-    
+
     @Override
     public float getExhaustion() {
-        return this.getHandle().getFoodStats().foodExhaustionLevel;
+        return getHandle().getFoodData().exhaustionLevel;
     }
-    
+
     @Override
-    public void setExhaustion(final float value) {
-        this.getHandle().getFoodStats().foodExhaustionLevel = value;
+    public void setExhaustion(float value) {
+        getHandle().getFoodData().exhaustionLevel = value;
     }
-    
+
     @Override
     public float getSaturation() {
-        return this.getHandle().getFoodStats().foodSaturationLevel;
+        return getHandle().getFoodData().saturationLevel;
     }
-    
+
     @Override
-    public void setSaturation(final float value) {
-        this.getHandle().getFoodStats().foodSaturationLevel = value;
+    public void setSaturation(float value) {
+        getHandle().getFoodData().saturationLevel = value;
     }
-    
+
     @Override
     public int getFoodLevel() {
-        return this.getHandle().getFoodStats().foodLevel;
+        return getHandle().getFoodData().foodLevel;
     }
-    
+
     @Override
-    public void setFoodLevel(final int value) {
-        this.getHandle().getFoodStats().foodLevel = value;
+    public void setFoodLevel(int value) {
+        getHandle().getFoodData().foodLevel = value;
     }
-    
+
     @Override
     public Location getBedSpawnLocation() {
-        final org.bukkit.World world = this.getServer().getWorld(this.getHandle().spawnWorld);
-        BlockPos bed = this.getHandle().getBedLocation();
+        World world = getServer().getWorld(getHandle().spawnWorld);
+        BlockPosition bed = getHandle().getBed();
+
         if (world != null && bed != null) {
-            bed = EntityPlayer.getBedSpawnLocation(((CraftWorld)world).getHandle(), bed, this.getHandle().isSpawnForced());
+            bed = EntityHuman.getBed(((CraftWorld) world).getHandle(), bed, getHandle().isRespawnForced());
             if (bed != null) {
                 return new Location(world, bed.getX(), bed.getY(), bed.getZ());
             }
         }
         return null;
     }
-    
+
     @Override
-    public void setBedSpawnLocation(final Location location) {
-        this.setBedSpawnLocation(location, false);
+    public void setBedSpawnLocation(Location location) {
+        setBedSpawnLocation(location, false);
     }
-    
+
     @Override
-    public void setBedSpawnLocation(final Location location, final boolean override) {
+    public void setBedSpawnLocation(Location location, boolean override) {
         if (location == null) {
-            this.getHandle().setSpawnPoint(null, override);
-        }
-        else {
-            this.getHandle().setSpawnPoint(new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ()), override);
-            this.getHandle().spawnWorld = location.getWorld().getName();
+            getHandle().setRespawnPosition(null, override);
+        } else {
+            getHandle().setRespawnPosition(new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ()), override);
+            getHandle().spawnWorld = location.getWorld().getName();
         }
     }
-    
+
     @Override
-    public void hidePlayer(final Player player) {
-        Validate.notNull((Object)player, "hidden player cannot be null");
-        if (this.getHandle().connection == null) {
-            return;
-        }
-        if (this.equals(player)) {
-            return;
-        }
-        if (this.hiddenPlayers.contains(player.getUniqueId())) {
-            return;
-        }
-        this.hiddenPlayers.add(player.getUniqueId());
-        final EntityTracker tracker = ((WorldServer)this.entity.worldObj).theEntityTracker;
-        final EntityPlayerMP other = ((CraftPlayer)player).getHandle();
-        final EntityTrackerEntry entry = tracker.trackedEntityHashTable.lookup(other.getEntityId());
+    public void hidePlayer(Player player) {
+        Validate.notNull(player, "hidden player cannot be null");
+        if (getHandle().playerConnection == null) return;
+        if (equals(player)) return;
+        if (hiddenPlayers.contains(player.getUniqueId())) return;
+        hiddenPlayers.add(player.getUniqueId());
+
+        // Remove this player from the hidden player's EntityTrackerEntry
+        EntityTracker tracker = ((WorldServer) entity.world).tracker;
+        EntityPlayer other = ((CraftPlayer) player).getHandle();
+        EntityTrackerEntry entry = (EntityTrackerEntry) tracker.trackedEntities.get(other.getId());
         if (entry != null) {
-            entry.removeTrackedPlayerSymmetric(this.getHandle());
+            entry.clear(getHandle());
         }
-        this.getHandle().connection.sendPacket(new SPacketPlayerListItem(SPacketPlayerListItem.Action.REMOVE_PLAYER, new EntityPlayerMP[] { other }));
+
+        // Remove the hidden player from this player user list, if they're on it
+        if (other.sentListPacket) {
+            getHandle().playerConnection.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.REMOVE_PLAYER, other));
+        }
     }
-    
+
     @Override
-    public void showPlayer(final Player player) {
-        Validate.notNull((Object)player, "shown player cannot be null");
-        if (this.getHandle().connection == null) {
-            return;
-        }
-        if (this.equals(player)) {
-            return;
-        }
-        if (!this.hiddenPlayers.contains(player.getUniqueId())) {
-            return;
-        }
-        this.hiddenPlayers.remove(player.getUniqueId());
-        final EntityTracker tracker = ((WorldServer)this.entity.worldObj).theEntityTracker;
-        final EntityPlayerMP other = ((CraftPlayer)player).getHandle();
-        this.getHandle().connection.sendPacket(new SPacketPlayerListItem(SPacketPlayerListItem.Action.ADD_PLAYER, new EntityPlayerMP[] { other }));
-        final EntityTrackerEntry entry = tracker.trackedEntityHashTable.lookup(other.getEntityId());
-        if (entry != null && !entry.trackingPlayers.contains(this.getHandle())) {
-            entry.updatePlayerEntity(this.getHandle());
+    public void showPlayer(Player player) {
+        Validate.notNull(player, "shown player cannot be null");
+        if (getHandle().playerConnection == null) return;
+        if (equals(player)) return;
+        if (!hiddenPlayers.contains(player.getUniqueId())) return;
+        hiddenPlayers.remove(player.getUniqueId());
+
+        EntityTracker tracker = ((WorldServer) entity.world).tracker;
+        EntityPlayer other = ((CraftPlayer) player).getHandle();
+
+        getHandle().playerConnection.sendPacket(new PacketPlayOutPlayerInfo(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, other));
+
+        EntityTrackerEntry entry = (EntityTrackerEntry) tracker.trackedEntities.get(other.getId());
+        if (entry != null && !entry.trackedPlayers.contains(getHandle())) {
+            entry.updatePlayer(getHandle());
         }
     }
-    
-    public void removeDisconnectingPlayer(final Player player) {
-        this.hiddenPlayers.remove(player.getUniqueId());
+
+    public void removeDisconnectingPlayer(Player player) {
+        hiddenPlayers.remove(player.getUniqueId());
     }
-    
+
     @Override
-    public boolean canSee(final Player player) {
-        return !this.hiddenPlayers.contains(player.getUniqueId());
+    public boolean canSee(Player player) {
+        return !hiddenPlayers.contains(player.getUniqueId());
     }
-    
+
     @Override
     public Map<String, Object> serialize() {
-        final Map<String, Object> result = new LinkedHashMap<String, Object>();
-        result.put("name", this.getName());
+        Map<String, Object> result = new LinkedHashMap<String, Object>();
+
+        result.put("name", getName());
+
         return result;
     }
-    
+
     @Override
     public Player getPlayer() {
         return this;
     }
-    
+
     @Override
-    public EntityPlayerMP getHandle() {
-        return (EntityPlayerMP)this.entity;
+    public EntityPlayer getHandle() {
+        return (EntityPlayer) entity;
     }
-    
-    public void setHandle(final EntityPlayerMP entity) {
+
+    public void setHandle(final EntityPlayer entity) {
         super.setHandle(entity);
     }
-    
+
     @Override
     public String toString() {
-        return "CraftPlayer{name=" + this.getName() + '}';
+        return "CraftPlayer{" + "name=" + getName() + '}';
     }
-    
+
     @Override
     public int hashCode() {
-        if (this.hash == 0 || this.hash == 485) {
-            this.hash = 485 + ((this.getUniqueId() != null) ? this.getUniqueId().hashCode() : 0);
+        if (hash == 0 || hash == 485) {
+            hash = 97 * 5 + (this.getUniqueId() != null ? this.getUniqueId().hashCode() : 0);
         }
-        return this.hash;
+        return hash;
     }
-    
+
     @Override
     public long getFirstPlayed() {
-        return this.firstPlayed;
+        return firstPlayed;
     }
-    
+
     @Override
     public long getLastPlayed() {
-        return this.lastPlayed;
+        return lastPlayed;
     }
-    
+
     @Override
     public boolean hasPlayedBefore() {
-        return this.hasPlayedBefore;
+        return hasPlayedBefore;
     }
-    
-    public void setFirstPlayed(final long firstPlayed) {
+
+    public void setFirstPlayed(long firstPlayed) {
         this.firstPlayed = firstPlayed;
     }
-    
-    public void readExtraData(final NBTTagCompound nbttagcompound) {
-        this.hasPlayedBefore = true;
+
+    public void readExtraData(NBTTagCompound nbttagcompound) {
+        hasPlayedBefore = true;
         if (nbttagcompound.hasKey("bukkit")) {
-            final NBTTagCompound data = nbttagcompound.getCompoundTag("bukkit");
+            NBTTagCompound data = nbttagcompound.getCompound("bukkit");
+
             if (data.hasKey("firstPlayed")) {
-                this.firstPlayed = data.getLong("firstPlayed");
-                this.lastPlayed = data.getLong("lastPlayed");
+                firstPlayed = data.getLong("firstPlayed");
+                lastPlayed = data.getLong("lastPlayed");
             }
+
             if (data.hasKey("newExp")) {
-                final EntityPlayerMP handle = this.getHandle();
-                handle.newExp = data.getInteger("newExp");
-                handle.newTotalExp = data.getInteger("newTotalExp");
-                handle.newLevel = data.getInteger("newLevel");
-                handle.expToDrop = data.getInteger("expToDrop");
+                EntityPlayer handle = getHandle();
+                handle.newExp = data.getInt("newExp");
+                handle.newTotalExp = data.getInt("newTotalExp");
+                handle.newLevel = data.getInt("newLevel");
+                handle.expToDrop = data.getInt("expToDrop");
                 handle.keepLevel = data.getBoolean("keepLevel");
             }
         }
     }
-    
-    public void setExtraData(final NBTTagCompound nbttagcompound) {
+
+    public void setExtraData(NBTTagCompound nbttagcompound) {
         if (!nbttagcompound.hasKey("bukkit")) {
-            nbttagcompound.setTag("bukkit", new NBTTagCompound());
+            nbttagcompound.set("bukkit", new NBTTagCompound());
         }
-        final NBTTagCompound data = nbttagcompound.getCompoundTag("bukkit");
-        final EntityPlayerMP handle = this.getHandle();
-        data.setInteger("newExp", handle.newExp);
-        data.setInteger("newTotalExp", handle.newTotalExp);
-        data.setInteger("newLevel", handle.newLevel);
-        data.setInteger("expToDrop", handle.expToDrop);
+
+        NBTTagCompound data = nbttagcompound.getCompound("bukkit");
+        EntityPlayer handle = getHandle();
+        data.setInt("newExp", handle.newExp);
+        data.setInt("newTotalExp", handle.newTotalExp);
+        data.setInt("newLevel", handle.newLevel);
+        data.setInt("expToDrop", handle.expToDrop);
         data.setBoolean("keepLevel", handle.keepLevel);
-        data.setLong("firstPlayed", this.getFirstPlayed());
+        data.setLong("firstPlayed", getFirstPlayed());
         data.setLong("lastPlayed", System.currentTimeMillis());
         data.setString("lastKnownName", handle.getName());
     }
-    
+
     @Override
-    public boolean beginConversation(final Conversation conversation) {
-        return this.conversationTracker.beginConversation(conversation);
+    public boolean beginConversation(Conversation conversation) {
+        return conversationTracker.beginConversation(conversation);
     }
-    
+
     @Override
-    public void abandonConversation(final Conversation conversation) {
-        this.conversationTracker.abandonConversation(conversation, new ConversationAbandonedEvent(conversation, new ManuallyAbandonedConversationCanceller()));
+    public void abandonConversation(Conversation conversation) {
+        conversationTracker.abandonConversation(conversation, new ConversationAbandonedEvent(conversation, new ManuallyAbandonedConversationCanceller()));
     }
-    
+
     @Override
-    public void abandonConversation(final Conversation conversation, final ConversationAbandonedEvent details) {
-        this.conversationTracker.abandonConversation(conversation, details);
+    public void abandonConversation(Conversation conversation, ConversationAbandonedEvent details) {
+        conversationTracker.abandonConversation(conversation, details);
     }
-    
+
     @Override
-    public void acceptConversationInput(final String input) {
-        this.conversationTracker.acceptConversationInput(input);
+    public void acceptConversationInput(String input) {
+        conversationTracker.acceptConversationInput(input);
     }
-    
+
     @Override
     public boolean isConversing() {
-        return this.conversationTracker.isConversing();
+        return conversationTracker.isConversing();
     }
-    
+
     @Override
-    public void sendPluginMessage(final Plugin source, final String channel, final byte[] message) {
-        StandardMessenger.validatePluginMessage(this.server.getMessenger(), source, channel, message);
-        if (this.getHandle().connection == null) {
-            return;
-        }
-        if (this.channels.contains(channel)) {
-            final SPacketCustomPayload packet = new SPacketCustomPayload(channel, new PacketBuffer(Unpooled.wrappedBuffer(message)));
-            this.getHandle().connection.sendPacket(packet);
+    public void sendPluginMessage(Plugin source, String channel, byte[] message) {
+        StandardMessenger.validatePluginMessage(server.getMessenger(), source, channel, message);
+        if (getHandle().playerConnection == null) return;
+
+        if (channels.contains(channel)) {
+            PacketPlayOutCustomPayload packet = new PacketPlayOutCustomPayload(channel, new PacketDataSerializer(Unpooled.wrappedBuffer(message)));
+            getHandle().playerConnection.sendPacket(packet);
         }
     }
-    
+
     @Override
-    public void setTexturePack(final String url) {
-        this.setResourcePack(url);
+    public void setTexturePack(String url) {
+        setResourcePack(url);
     }
-    
+
     @Override
-    public void setResourcePack(final String url) {
-        Validate.notNull((Object)url, "Resource pack URL cannot be null");
-        this.getHandle().loadResourcePack(url, "null");
+    public void setResourcePack(String url) {
+        Validate.notNull(url, "Resource pack URL cannot be null");
+
+        getHandle().setResourcePack(url, "null");
     }
-    
-    public void addChannel(final String channel) {
-        if (this.channels.add(channel)) {
-            this.server.getPluginManager().callEvent(new PlayerRegisterChannelEvent(this, channel));
+
+    @Override
+    public void setResourcePack(String url, byte[] hash) {
+        Validate.notNull(url, "Resource pack URL cannot be null");
+        Validate.notNull(hash, "Resource pack hash cannot be null");
+        Validate.isTrue(hash.length == 20, "Resource pack hash should be 20 bytes long but was " + hash.length);
+
+        getHandle().setResourcePack(url, BaseEncoding.base16().lowerCase().encode(hash));
+    }
+
+    public void addChannel(String channel) {
+        if (channels.add(channel)) {
+            server.getPluginManager().callEvent(new PlayerRegisterChannelEvent(this, channel));
         }
     }
-    
-    public void removeChannel(final String channel) {
-        if (this.channels.remove(channel)) {
-            this.server.getPluginManager().callEvent(new PlayerUnregisterChannelEvent(this, channel));
+
+    public void removeChannel(String channel) {
+        if (channels.remove(channel)) {
+            server.getPluginManager().callEvent(new PlayerUnregisterChannelEvent(this, channel));
         }
     }
-    
+
     @Override
     public Set<String> getListeningPluginChannels() {
-        return (Set<String>)ImmutableSet.copyOf((Collection)this.channels);
+        return ImmutableSet.copyOf(channels);
     }
-    
+
     public void sendSupportedChannels() {
-        if (this.getHandle().connection == null) {
-            return;
-        }
-        final Set<String> listening = this.server.getMessenger().getIncomingChannels();
+        if (getHandle().playerConnection == null) return;
+        Set<String> listening = server.getMessenger().getIncomingChannels();
+
         if (!listening.isEmpty()) {
-            final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            for (final String channel : listening) {
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+
+            for (String channel : listening) {
                 try {
                     stream.write(channel.getBytes("UTF8"));
-                    stream.write(0);
-                }
-                catch (IOException ex) {
-                    Logger.getLogger(CraftPlayer.class.getName()).log(Level.SEVERE, "Could not send Plugin Channel REGISTER to " + this.getName(), ex);
+                    stream.write((byte) 0);
+                } catch (IOException ex) {
+                    Logger.getLogger(CraftPlayer.class.getName()).log(Level.SEVERE, "Could not send Plugin Channel REGISTER to " + getName(), ex);
                 }
             }
-            this.getHandle().connection.sendPacket(new SPacketCustomPayload("REGISTER", new PacketBuffer(Unpooled.wrappedBuffer(stream.toByteArray()))));
+
+            getHandle().playerConnection.sendPacket(new PacketPlayOutCustomPayload("REGISTER", new PacketDataSerializer(Unpooled.wrappedBuffer(stream.toByteArray()))));
         }
     }
-    
+
     @Override
     public EntityType getType() {
         return EntityType.PLAYER;
     }
-    
+
     @Override
-    public void setMetadata(final String metadataKey, final MetadataValue newMetadataValue) {
-        (/*(MetadataStoreBase<CraftPlayer>)*/this.server.getPlayerMetadata()).setMetadata(this, metadataKey, newMetadataValue);
+    public void setMetadata(String metadataKey, MetadataValue newMetadataValue) {
+        server.getPlayerMetadata().setMetadata(this, metadataKey, newMetadataValue);
     }
-    
+
     @Override
-    public List<MetadataValue> getMetadata(final String metadataKey) {
-        return (/*(MetadataStoreBase<CraftPlayer>)*/this.server.getPlayerMetadata()).getMetadata(this, metadataKey);
+    public List<MetadataValue> getMetadata(String metadataKey) {
+        return server.getPlayerMetadata().getMetadata(this, metadataKey);
     }
-    
+
     @Override
-    public boolean hasMetadata(final String metadataKey) {
-        return (/*(MetadataStoreBase<CraftPlayer>)*/this.server.getPlayerMetadata()).hasMetadata(this, metadataKey);
+    public boolean hasMetadata(String metadataKey) {
+        return server.getPlayerMetadata().hasMetadata(this, metadataKey);
     }
-    
+
     @Override
-    public void removeMetadata(final String metadataKey, final Plugin owningPlugin) {
-        (/*(MetadataStoreBase<CraftPlayer>)*/this.server.getPlayerMetadata()).removeMetadata(this, metadataKey, owningPlugin);
+    public void removeMetadata(String metadataKey, Plugin owningPlugin) {
+        server.getPlayerMetadata().removeMetadata(this, metadataKey, owningPlugin);
     }
-    
+
     @Override
-    public boolean setWindowProperty(final InventoryView.Property prop, final int value) {
-        final Container container = this.getHandle().openContainer;
-        if (((CBContainer)container).getBukkitView().getType() != prop.getType()) {
+    public boolean setWindowProperty(Property prop, int value) {
+        Container container = getHandle().activeContainer;
+        if (container.getBukkitView().getType() != prop.getType()) {
             return false;
         }
-        this.getHandle().sendProgressBarUpdate(container, prop.getId(), value);
+        getHandle().setContainerData(container, prop.getId(), value);
         return true;
     }
-    
-    public void disconnect(final String reason) {
-        this.conversationTracker.abandonAllConversations();
-        this.perm.clearPermissions();
+
+    public void disconnect(String reason) {
+        conversationTracker.abandonAllConversations();
+        perm.clearPermissions();
     }
-    
+
     @Override
     public boolean isFlying() {
-        return this.getHandle().capabilities.isFlying;
+        return getHandle().abilities.isFlying;
     }
-    
+
     @Override
-    public void setFlying(final boolean value) {
-        if (!this.getAllowFlight() && value) {
+    public void setFlying(boolean value) {
+        if (!getAllowFlight() && value) {
             throw new IllegalArgumentException("Cannot make player fly if getAllowFlight() is false");
         }
-        this.getHandle().capabilities.isFlying = value;
-        this.getHandle().sendPlayerAbilities();
+
+        getHandle().abilities.isFlying = value;
+        getHandle().updateAbilities();
     }
-    
+
     @Override
     public boolean getAllowFlight() {
-        return this.getHandle().capabilities.allowFlying;
+        return getHandle().abilities.canFly;
     }
-    
+
     @Override
-    public void setAllowFlight(final boolean value) {
-        if (this.isFlying() && !value) {
-            this.getHandle().capabilities.isFlying = false;
+    public void setAllowFlight(boolean value) {
+        if (isFlying() && !value) {
+            getHandle().abilities.isFlying = false;
         }
-        this.getHandle().capabilities.allowFlying = value;
-        this.getHandle().sendPlayerAbilities();
+
+        getHandle().abilities.canFly = value;
+        getHandle().updateAbilities();
     }
-    
+
     @Override
     public int getNoDamageTicks() {
-        if (this.getHandle().respawnInvulnerabilityTicks > 0) {
-            return Math.max(this.getHandle().respawnInvulnerabilityTicks, this.getHandle().hurtResistantTime);
+        if (getHandle().invulnerableTicks > 0) {
+            return Math.max(getHandle().invulnerableTicks, getHandle().noDamageTicks);
+        } else {
+            return getHandle().noDamageTicks;
         }
-        return this.getHandle().hurtResistantTime;
     }
-    
+
     @Override
-    public void setFlySpeed(final float value) {
-        this.validateSpeed(value);
-        final EntityPlayerMP player = this.getHandle();
-        player.capabilities.flySpeed = value / 2.0f;
-        player.sendPlayerAbilities();
+    public void setFlySpeed(float value) {
+        validateSpeed(value);
+        EntityPlayer player = getHandle();
+        player.abilities.flySpeed = value / 2f;
+        player.updateAbilities();
+
     }
-    
+
     @Override
-    public void setWalkSpeed(final float value) {
-        this.validateSpeed(value);
-        final EntityPlayerMP player = this.getHandle();
-        player.capabilities.walkSpeed = value / 2.0f;
-        player.sendPlayerAbilities();
+    public void setWalkSpeed(float value) {
+        validateSpeed(value);
+        EntityPlayer player = getHandle();
+        player.abilities.walkSpeed = value / 2f;
+        player.updateAbilities();
     }
-    
+
     @Override
     public float getFlySpeed() {
-        return this.getHandle().capabilities.flySpeed * 2.0f;
+        return getHandle().abilities.flySpeed * 2f;
     }
-    
+
     @Override
     public float getWalkSpeed() {
-        return this.getHandle().capabilities.walkSpeed * 2.0f;
+        return getHandle().abilities.walkSpeed * 2f;
     }
-    
-    private void validateSpeed(final float value) {
-        if (value < 0.0f) {
-            if (value < -1.0f) {
-                throw new IllegalArgumentException(String.valueOf(value) + " is too low");
+
+    private void validateSpeed(float value) {
+        if (value < 0) {
+            if (value < -1f) {
+                throw new IllegalArgumentException(value + " is too low");
+            }
+        } else {
+            if (value > 1f) {
+                throw new IllegalArgumentException(value + " is too high");
             }
         }
-        else if (value > 1.0f) {
-            throw new IllegalArgumentException(String.valueOf(value) + " is too high");
-        }
     }
-    
+
     @Override
-    public void setMaxHealth(final double amount) {
+    public void setMaxHealth(double amount) {
         super.setMaxHealth(amount);
-        this.health = Math.min(this.health, this.health);
-        this.getHandle().setPlayerHealthUpdated();
+        this.health = Math.min(this.health, health);
+        getHandle().triggerHealthUpdate();
     }
-    
+
     @Override
     public void resetMaxHealth() {
         super.resetMaxHealth();
-        this.getHandle().setPlayerHealthUpdated();
+        getHandle().triggerHealthUpdate();
     }
-    
+
     @Override
     public CraftScoreboard getScoreboard() {
         return this.server.getScoreboardManager().getPlayerBoard(this);
     }
-    
+
     @Override
-    public void setScoreboard(final Scoreboard scoreboard) {
-        Validate.notNull((Object)scoreboard, "Scoreboard cannot be null");
-        final NetHandlerPlayServer playerConnection = this.getHandle().connection;
+    public void setScoreboard(Scoreboard scoreboard) {
+        Validate.notNull(scoreboard, "Scoreboard cannot be null");
+        PlayerConnection playerConnection = getHandle().playerConnection;
         if (playerConnection == null) {
             throw new IllegalStateException("Cannot set scoreboard yet");
         }
         if (playerConnection.isDisconnected()) {
             throw new IllegalStateException("Cannot set scoreboard for invalid CraftPlayer");
         }
+
         this.server.getScoreboardManager().setPlayerBoard(this, scoreboard);
     }
-    
+
     @Override
-    public void setHealthScale(final double value) {
-        Validate.isTrue((float)value > 0.0f, "Must be greater than 0");
-        this.healthScale = value;
-        this.scaledHealth = true;
-        this.updateScaledHealth();
+    public void setHealthScale(double value) {
+        Validate.isTrue((float) value > 0F, "Must be greater than 0");
+        healthScale = value;
+        scaledHealth = true;
+        updateScaledHealth();
     }
-    
+
     @Override
     public double getHealthScale() {
-        return this.healthScale;
+        return healthScale;
     }
-    
+
     @Override
-    public void setHealthScaled(final boolean scale) {
-        final boolean scaledHealth = this.scaledHealth;
-        this.scaledHealth = scale;
-        if (scaledHealth != scale) {
-            this.updateScaledHealth();
+    public void setHealthScaled(boolean scale) {
+        if (scaledHealth != (scaledHealth = scale)) {
+            updateScaledHealth();
         }
     }
-    
+
     @Override
     public boolean isHealthScaled() {
-        return this.scaledHealth;
+        return scaledHealth;
     }
-    
+
     public float getScaledHealth() {
-        return (float)(this.isHealthScaled() ? (this.getHealth() * this.getHealthScale() / this.getMaxHealth()) : this.getHealth());
+        return (float) (isHealthScaled() ? getHealth() * getHealthScale() / getMaxHealth() : getHealth());
     }
-    
+
     @Override
     public double getHealth() {
-        return this.health;
+        return health;
     }
-    
-    public void setRealHealth(final double health) {
+
+    public void setRealHealth(double health) {
         this.health = health;
     }
-    
+
     public void updateScaledHealth() {
-        final AttributeMap attributemapserver = (AttributeMap)this.getHandle().getAttributeMap();
-        final Collection set = attributemapserver.getWatchedAttributes();
-        this.injectScaledMaxHealth(set, true);
-        this.getHandle().getDataManager().set(EntityLivingBase.HEALTH, this.getScaledHealth());
-        this.sendHealthUpdate();
-        this.getHandle().connection.sendPacket(new SPacketEntityProperties(this.getHandle().getEntityId(), set));
-        this.getHandle().maxHealthCache = this.getMaxHealth();
+        AttributeMapServer attributemapserver = (AttributeMapServer) getHandle().getAttributeMap();
+        Collection set = attributemapserver.c(); // PAIL: Rename
+
+        injectScaledMaxHealth(set, true);
+
+        getHandle().getDataWatcher().set(EntityLiving.HEALTH, (float) getScaledHealth());
+        sendHealthUpdate();
+        getHandle().playerConnection.sendPacket(new PacketPlayOutUpdateAttributes(getHandle().getId(), set));
+
+        getHandle().maxHealthCache = getMaxHealth();
     }
-    
+
     public void sendHealthUpdate() {
-        this.getHandle().connection.sendPacket(new SPacketUpdateHealth(this.getScaledHealth(), this.getHandle().getFoodStats().getFoodLevel(), this.getHandle().getFoodStats().getSaturationLevel()));
+        getHandle().playerConnection.sendPacket(new PacketPlayOutUpdateHealth(getScaledHealth(), getHandle().getFoodData().getFoodLevel(), getHandle().getFoodData().getSaturationLevel()));
     }
-    
-    public void injectScaledMaxHealth(final Collection collection, final boolean force) {
-        if (!this.scaledHealth && !force) {
+
+    public void injectScaledMaxHealth(Collection collection, boolean force) {
+        if (!scaledHealth && !force) {
             return;
         }
-        for (final Object genericInstance : collection) {
-            final IAttribute attribute = ((IAttributeInstance)genericInstance).getAttribute();
-            if (attribute.getAttributeUnlocalizedName().equals("generic.maxHealth")) {
+        for (Object genericInstance : collection) {
+            IAttribute attribute = ((AttributeInstance) genericInstance).getAttribute();
+            if (attribute.getName().equals("generic.maxHealth")) {
                 collection.remove(genericInstance);
                 break;
             }
         }
-        collection.add(new ModifiableAttributeInstance(this.getHandle().getAttributeMap(), new RangedAttribute(null, "generic.maxHealth", this.scaledHealth ? this.healthScale : this.getMaxHealth(), 0.0, 3.4028234663852886E38).setDescription("Max Health").setShouldWatch(true)));
+        collection.add(new AttributeModifiable(getHandle().getAttributeMap(), (new AttributeRanged(null, "generic.maxHealth", scaledHealth ? healthScale : getMaxHealth(), 0.0D, Float.MAX_VALUE)).a("Max Health").a(true)));
     }
-    
+
     @Override
     public org.bukkit.entity.Entity getSpectatorTarget() {
-        final net.minecraft.entity.Entity followed = this.getHandle().getSpectatingEntity();
-        return (followed == this.getHandle()) ? null : followed.getBukkitEntity();
+        Entity followed = getHandle().getSpecatorTarget();
+        return followed == getHandle() ? null : followed.getBukkitEntity();
     }
-    
+
     @Override
-    public void setSpectatorTarget(final org.bukkit.entity.Entity entity) {
-        Preconditions.checkArgument(this.getGameMode() == GameMode.SPECTATOR, (Object)"Player must be in spectator mode");
-        this.getHandle().setSpectatingEntity((entity == null) ? null : ((CraftEntity)entity).getHandle());
+    public void setSpectatorTarget(org.bukkit.entity.Entity entity) {
+        Preconditions.checkArgument(getGameMode() == GameMode.SPECTATOR, "Player must be in spectator mode");
+        getHandle().setSpectatorTarget((entity == null) ? null : ((CraftEntity) entity).getHandle());
     }
-    
+
     @Override
-    public void sendTitle(final String title, final String subtitle) {
+    public void sendTitle(String title, String subtitle) {
+        sendTitle(title, subtitle, 10, 70, 20);
+    }
+
+    @Override
+    public void sendTitle(String title, String subtitle, int fadeIn, int stay, int fadeOut) {
         if (title != null) {
-            final SPacketTitle packetTitle = new SPacketTitle(SPacketTitle.Type.TITLE, CraftChatMessage.fromString(title)[0]);
-            this.getHandle().connection.sendPacket(packetTitle);
+            PacketPlayOutTitle packetTitle = new PacketPlayOutTitle(EnumTitleAction.TITLE, CraftChatMessage.fromString(title)[0]);
+            getHandle().playerConnection.sendPacket(packetTitle);
         }
+
         if (subtitle != null) {
-            final SPacketTitle packetSubtitle = new SPacketTitle(SPacketTitle.Type.SUBTITLE, CraftChatMessage.fromString(subtitle)[0]);
-            this.getHandle().connection.sendPacket(packetSubtitle);
+            PacketPlayOutTitle packetSubtitle = new PacketPlayOutTitle(EnumTitleAction.SUBTITLE, CraftChatMessage.fromString(subtitle)[0]);
+            getHandle().playerConnection.sendPacket(packetSubtitle);
         }
+
+        PacketPlayOutTitle times = new PacketPlayOutTitle(fadeIn, stay, fadeOut);
+        getHandle().playerConnection.sendPacket(times);
     }
-    
+
     @Override
     public void resetTitle() {
-        final SPacketTitle packetReset = new SPacketTitle(SPacketTitle.Type.RESET, null);
-        this.getHandle().connection.sendPacket(packetReset);
+        PacketPlayOutTitle packetReset = new PacketPlayOutTitle(EnumTitleAction.RESET, null);
+        getHandle().playerConnection.sendPacket(packetReset);
     }
-    
+
     @Override
-    public void spawnParticle(final Particle particle, final Location location, final int count) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count);
+    public void spawnParticle(Particle particle, Location location, int count) {
+        spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count);
     }
-    
+
     @Override
-    public void spawnParticle(final Particle particle, final double x, final double y, final double z, final int count) {
-        this.spawnParticle(particle, x, y, z, count, (Object)null);
+    public void spawnParticle(Particle particle, double x, double y, double z, int count) {
+        spawnParticle(particle, x, y, z, count, null);
     }
-    
+
     @Override
-    public <T> void spawnParticle(final Particle particle, final Location location, final int count, final T data) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, data);
+    public <T> void spawnParticle(Particle particle, Location location, int count, T data) {
+        spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, data);
     }
-    
+
     @Override
-    public <T> void spawnParticle(final Particle particle, final double x, final double y, final double z, final int count, final T data) {
-        this.spawnParticle(particle, x, y, z, count, 0.0, 0.0, 0.0, data);
+    public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, T data) {
+        spawnParticle(particle, x, y, z, count, 0, 0, 0, data);
     }
-    
+
     @Override
-    public void spawnParticle(final Particle particle, final Location location, final int count, final double offsetX, final double offsetY, final double offsetZ) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ);
+    public void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ) {
+        spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ);
     }
-    
+
     @Override
-    public void spawnParticle(final Particle particle, final double x, final double y, final double z, final int count, final double offsetX, final double offsetY, final double offsetZ) {
-        this.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, (Object)null);
+    public void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ) {
+        spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, null);
     }
-    
+
     @Override
-    public <T> void spawnParticle(final Particle particle, final Location location, final int count, final double offsetX, final double offsetY, final double offsetZ, final T data) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, data);
+    public <T> void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, T data) {
+        spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, data);
     }
-    
+
     @Override
-    public <T> void spawnParticle(final Particle particle, final double x, final double y, final double z, final int count, final double offsetX, final double offsetY, final double offsetZ, final T data) {
-        this.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, 1.0, data);
+    public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, T data) {
+        spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, 1, data);
     }
-    
+
     @Override
-    public void spawnParticle(final Particle particle, final Location location, final int count, final double offsetX, final double offsetY, final double offsetZ, final double extra) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, extra);
+    public void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double extra) {
+        spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, extra);
     }
-    
+
     @Override
-    public void spawnParticle(final Particle particle, final double x, final double y, final double z, final int count, final double offsetX, final double offsetY, final double offsetZ, final double extra) {
-        this.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, extra, (Object)null);
+    public void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra) {
+        spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, extra, null);
     }
-    
+
     @Override
-    public <T> void spawnParticle(final Particle particle, final Location location, final int count, final double offsetX, final double offsetY, final double offsetZ, final double extra, final T data) {
-        this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, extra, data);
+    public <T> void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double extra, T data) {
+        spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count, offsetX, offsetY, offsetZ, extra, data);
     }
-    
+
     @Override
-    public <T> void spawnParticle(final Particle particle, final double x, final double y, final double z, final int count, final double offsetX, final double offsetY, final double offsetZ, final double extra, final T data) {
+    public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data) {
         if (data != null && !particle.getDataType().isInstance(data)) {
             throw new IllegalArgumentException("data should be " + particle.getDataType() + " got " + data.getClass());
         }
-        final SPacketParticles packetplayoutworldparticles = new SPacketParticles(CraftParticle.toNMS(particle), true, (float)x, (float)y, (float)z, (float)offsetX, (float)offsetY, (float)offsetZ, (float)extra, count, CraftParticle.toData(particle, data));
-        this.getHandle().connection.sendPacket(packetplayoutworldparticles);
+        PacketPlayOutWorldParticles packetplayoutworldparticles = new PacketPlayOutWorldParticles(CraftParticle.toNMS(particle), true, (float) x, (float) y, (float) z, (float) offsetX, (float) offsetY, (float) offsetZ, (float) extra, count, CraftParticle.toData(particle, data));
+        getHandle().playerConnection.sendPacket(packetplayoutworldparticles);
+
+    }
+
+    @Override
+    public org.bukkit.advancement.AdvancementProgress getAdvancementProgress(org.bukkit.advancement.Advancement advancement) {
+        Preconditions.checkArgument(advancement != null, "advancement");
+
+        CraftAdvancement craft = (CraftAdvancement) advancement;
+        AdvancementDataPlayer data = getHandle().getAdvancementData();
+        AdvancementProgress progress = data.getProgress(craft.getHandle());
+
+        return new CraftAdvancementProgress(craft, data, progress);
+    }
+
+    @Override
+    public String getLocale() {
+        return getHandle().locale;
     }
 }

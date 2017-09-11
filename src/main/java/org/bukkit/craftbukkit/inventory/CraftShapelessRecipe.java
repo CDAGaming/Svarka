@@ -1,52 +1,48 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.inventory;
 
 import java.util.List;
-import net.minecraft.item.crafting.CraftingManager;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
-import java.util.Iterator;
+
+import net.minecraft.server.CraftingManager;
+import net.minecraft.server.NonNullList;
+import net.minecraft.server.RecipeItemStack;
+import net.minecraft.server.ShapelessRecipes;
+
+import org.bukkit.NamespacedKey;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.inventory.ItemStack;
-import net.minecraft.item.crafting.ShapelessRecipes;
 import org.bukkit.inventory.ShapelessRecipe;
 
-public class CraftShapelessRecipe extends ShapelessRecipe implements CraftRecipe
-{
+public class CraftShapelessRecipe extends ShapelessRecipe implements CraftRecipe {
+    // TODO: Could eventually use this to add a matches() method or some such
     private ShapelessRecipes recipe;
-    
-    public CraftShapelessRecipe(final ItemStack result) {
-        super(result);
+
+    public CraftShapelessRecipe(NamespacedKey key, ItemStack result) {
+        super(key, result);
     }
-    
-    public CraftShapelessRecipe(final ItemStack result, final ShapelessRecipes recipe) {
-        this(result);
+
+    public CraftShapelessRecipe(ItemStack result, ShapelessRecipes recipe) {
+        this(CraftNamespacedKey.fromMinecraft(recipe.key), result);
         this.recipe = recipe;
     }
-    
-    public static CraftShapelessRecipe fromBukkitRecipe(final ShapelessRecipe recipe) {
+
+    public static CraftShapelessRecipe fromBukkitRecipe(ShapelessRecipe recipe) {
         if (recipe instanceof CraftShapelessRecipe) {
-            return (CraftShapelessRecipe)recipe;
+            return (CraftShapelessRecipe) recipe;
         }
-        final CraftShapelessRecipe ret = new CraftShapelessRecipe(recipe.getResult());
-        for (final ItemStack ingred : recipe.getIngredientList()) {
+        CraftShapelessRecipe ret = new CraftShapelessRecipe(recipe.getKey(), recipe.getResult());
+        for (ItemStack ingred : recipe.getIngredientList()) {
             ret.addIngredient(ingred.getType(), ingred.getDurability());
         }
         return ret;
     }
-    
-    @Override
+
     public void addToCraftingManager() {
-        final List<ItemStack> ingred = this.getIngredientList();
-        final Object[] data = new Object[ingred.size()];
-        int i = 0;
-        for (final ItemStack mdata : ingred) {
-            final int id = mdata.getTypeId();
-            final short dmg = mdata.getDurability();
-            data[i] = new net.minecraft.item.ItemStack(CraftMagicNumbers.getItem(id), 1, dmg);
-            ++i;
+        List<ItemStack> ingred = this.getIngredientList();
+        NonNullList<RecipeItemStack> data = NonNullList.a(ingred.size(), RecipeItemStack.a);
+        for (int i = 0; i < ingred.size(); i++) {
+            data.set(i, RecipeItemStack.a(new net.minecraft.server.ItemStack[]{CraftItemStack.asNMSCopy(ingred.get(i))}));
         }
-        CraftingManager.getInstance().addShapelessRecipe(CraftItemStack.asNMSCopy(this.getResult()), data);
+
+        CraftingManager.a(CraftNamespacedKey.toMinecraft(this.getKey()), new ShapelessRecipes("", CraftItemStack.asNMSCopy(this.getResult()), data));
     }
 }

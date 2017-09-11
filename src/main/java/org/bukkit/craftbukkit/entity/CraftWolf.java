@@ -1,50 +1,40 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.item.EnumDyeColor;
+import net.minecraft.server.EntityWolf;
+import net.minecraft.server.EnumColor;
 import org.bukkit.DyeColor;
-import org.bukkit.entity.EntityType;
-import net.minecraft.entity.passive.EntityTameable;
-import net.minecraft.entity.passive.EntityWolf;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Wolf;
 
-public class CraftWolf extends CraftTameableAnimal implements Wolf
-{
-    public CraftWolf(final CraftServer server, final EntityWolf wolf) {
+public class CraftWolf extends CraftTameableAnimal implements Wolf {
+    public CraftWolf(CraftServer server, EntityWolf wolf) {
         super(server, wolf);
     }
-    
-    @Override
+
     public boolean isAngry() {
-        return this.getHandle().isAngry();
+        return getHandle().isAngry();
     }
-    
-    @Override
-    public void setAngry(final boolean angry) {
-        this.getHandle().setAngry(angry);
+
+    public void setAngry(boolean angry) {
+        getHandle().setAngry(angry);
     }
-    
+
     @Override
     public EntityWolf getHandle() {
-        return (EntityWolf)this.entity;
+        return (EntityWolf) entity;
     }
-    
+
     @Override
     public EntityType getType() {
         return EntityType.WOLF;
     }
-    
-    @Override
+
     public DyeColor getCollarColor() {
-        return DyeColor.getByWoolData((byte)this.getHandle().getCollarColor().getMetadata());
+        return DyeColor.getByWoolData((byte) getHandle().getCollarColor().getColorIndex());
     }
-    
-    @Override
-    public void setCollarColor(final DyeColor color) {
-        this.getHandle().setCollarColor(EnumDyeColor.byMetadata(color.getWoolData()));
+
+    public void setCollarColor(DyeColor color) {
+        getHandle().setCollarColor(EnumColor.fromColorIndex(color.getWoolData()));
     }
 }

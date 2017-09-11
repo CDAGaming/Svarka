@@ -1,94 +1,97 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.block;
 
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.potion.Potion;
-import org.bukkit.potion.PotionEffectType;
-import org.bukkit.potion.PotionEffect;
-import java.util.Iterator;
-import net.minecraft.entity.player.EntityPlayer;
 import java.util.ArrayList;
-import org.bukkit.entity.LivingEntity;
 import java.util.Collection;
-import org.bukkit.craftbukkit.inventory.CraftInventoryBeacon;
-import org.bukkit.inventory.Inventory;
+import net.minecraft.server.EntityHuman;
+import net.minecraft.server.MobEffectList;
+import net.minecraft.server.TileEntity;
+import net.minecraft.server.TileEntityBeacon;
 import org.bukkit.Material;
-import org.bukkit.block.Block;
-import net.minecraft.tileentity.TileEntityBeacon;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.block.Beacon;
+import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.inventory.CraftInventoryBeacon;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.inventory.BeaconInventory;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
-public class CraftBeacon extends CraftBlockState implements Beacon
-{
-    private final CraftWorld world;
-    private final TileEntityBeacon beacon;
-    
+public class CraftBeacon extends CraftContainer<TileEntityBeacon> implements Beacon {
+
     public CraftBeacon(final Block block) {
-        super(block);
-        this.world = (CraftWorld)block.getWorld();
-        this.beacon = (TileEntityBeacon)this.world.getTileEntityAt(this.getX(), this.getY(), this.getZ());
+        super(block, TileEntityBeacon.class);
     }
-    
+
     public CraftBeacon(final Material material, final TileEntityBeacon te) {
-        super(material);
-        this.world = null;
-        this.beacon = te;
+        super(material, te);
     }
-    
+
     @Override
-    public Inventory getInventory() {
-        return new CraftInventoryBeacon(this.beacon);
+    public BeaconInventory getSnapshotInventory() {
+        return new CraftInventoryBeacon(this.getSnapshot());
     }
-    
+
     @Override
-    public boolean update(final boolean force, final boolean applyPhysics) {
-        final boolean result = super.update(force, applyPhysics);
-        if (result) {
-            this.beacon.markDirty();
+    public BeaconInventory getInventory() {
+        if (!this.isPlaced()) {
+            return this.getSnapshotInventory();
         }
-        return result;
+
+        return new CraftInventoryBeacon(this.getTileEntity());
     }
-    
-    @Override
-    public TileEntityBeacon getTileEntity() {
-        return this.beacon;
-    }
-    
+
     @Override
     public Collection<LivingEntity> getEntitiesInRange() {
-        final Collection<EntityPlayer> nms = (Collection<EntityPlayer>)this.beacon.getHumansInRange();
-        final Collection<LivingEntity> bukkit = new ArrayList<LivingEntity>(nms.size());
-        for (final EntityPlayer human : nms) {
-            bukkit.add(human.getBukkitEntity());
+        TileEntity tileEntity = this.getTileEntityFromWorld();
+        if (tileEntity instanceof TileEntityBeacon) {
+            TileEntityBeacon beacon = (TileEntityBeacon) tileEntity;
+
+            Collection<EntityHuman> nms = beacon.getHumansInRange();
+            Collection<LivingEntity> bukkit = new ArrayList<LivingEntity>(nms.size());
+
+            for (EntityHuman human : nms) {
+                bukkit.add(human.getBukkitEntity());
+            }
+
+            return bukkit;
         }
-        return bukkit;
+
+        // block is no longer a beacon
+        return new ArrayList<LivingEntity>();
     }
-    
+
     @Override
     public int getTier() {
-        return this.beacon.levels;
+        return this.getSnapshot().levels;
     }
-    
+
     @Override
     public PotionEffect getPrimaryEffect() {
-        return this.beacon.getPrimaryEffect();
+        return this.getSnapshot().getPrimaryEffect();
     }
-    
+
     @Override
-    public void setPrimaryEffect(final PotionEffectType effect) {
-        this.beacon.primaryEffect = ((effect != null) ? Potion.getPotionById(effect.getId()) : null);
+    public void setPrimaryEffect(PotionEffectType effect) {
+        this.getSnapshot().primaryEffect = (effect != null) ? MobEffectList.fromId(effect.getId()) : null;
     }
-    
+
     @Override
     public PotionEffect getSecondaryEffect() {
-        return this.beacon.getSecondaryEffect();
+        return this.getSnapshot().getSecondaryEffect();
     }
-    
+
     @Override
-    public void setSecondaryEffect(final PotionEffectType effect) {
-        this.beacon.secondaryEffect = ((effect != null) ? Potion.getPotionById(effect.getId()) : null);
+    public void setSecondaryEffect(PotionEffectType effect) {
+        this.getSnapshot().secondaryEffect = (effect != null) ? MobEffectList.fromId(effect.getId()) : null;
+    }
+
+    @Override
+    public String getCustomName() {
+        TileEntityBeacon beacon = this.getSnapshot();
+        return beacon.hasCustomName() ? beacon.getName() : null;
+    }
+
+    @Override
+    public void setCustomName(String name) {
+        this.getSnapshot().setCustomName(name);
     }
 }

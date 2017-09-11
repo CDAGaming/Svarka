@@ -22,6 +22,10 @@ public enum Attribute {
      */
     GENERIC_MOVEMENT_SPEED,
     /**
+     * Flying speed of an Entity.
+     */
+    GENERIC_FLYING_SPEED,
+    /**
      * Attack damage of an Entity.
      */
     GENERIC_ATTACK_DAMAGE,
@@ -33,6 +37,10 @@ public enum Attribute {
      * Armor bonus of an Entity.
      */
     GENERIC_ARMOR,
+    /**
+     * Armor durability bonus of an Entity.
+     */
+    GENERIC_ARMOR_TOUGHNESS,
     /**
      * Luck bonus of an Entity.
      */

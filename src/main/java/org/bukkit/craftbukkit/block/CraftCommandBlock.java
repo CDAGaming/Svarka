@@ -1,69 +1,56 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.block;
 
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.server.TileEntityCommand;
 import org.bukkit.Material;
-import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.block.Block;
-import net.minecraft.tileentity.TileEntityCommandBlock;
 import org.bukkit.block.CommandBlock;
 
-public class CraftCommandBlock extends CraftBlockState implements CommandBlock
-{
-    private final TileEntityCommandBlock commandBlock;
+public class CraftCommandBlock extends CraftBlockEntityState<TileEntityCommand> implements CommandBlock {
+
     private String command;
     private String name;
-    
-    public CraftCommandBlock(final Block block) {
-        super(block);
-        final CraftWorld world = (CraftWorld)block.getWorld();
-        this.commandBlock = (TileEntityCommandBlock)world.getTileEntityAt(this.getX(), this.getY(), this.getZ());
-        this.command = this.commandBlock.getCommandBlockLogic().getCommand();
-        this.name = this.commandBlock.getCommandBlockLogic().getName();
+
+    public CraftCommandBlock(Block block) {
+        super(block, TileEntityCommand.class);
     }
-    
-    public CraftCommandBlock(final Material material, final TileEntityCommandBlock te) {
-        super(material);
-        this.commandBlock = te;
-        this.command = this.commandBlock.getCommandBlockLogic().getCommand();
-        this.name = this.commandBlock.getCommandBlockLogic().getName();
+
+    public CraftCommandBlock(final Material material, final TileEntityCommand te) {
+        super(material, te);
     }
-    
+
+    @Override
+    public void load(TileEntityCommand commandBlock) {
+        super.load(commandBlock);
+
+        command = commandBlock.getCommandBlock().getCommand();
+        name = commandBlock.getCommandBlock().getName();
+    }
+
     @Override
     public String getCommand() {
-        return this.command;
+        return command;
     }
-    
+
     @Override
-    public void setCommand(final String command) {
-        this.command = ((command != null) ? command : "");
+    public void setCommand(String command) {
+        this.command = command != null ? command : "";
     }
-    
+
     @Override
     public String getName() {
-        return this.name;
+        return name;
     }
-    
+
     @Override
-    public void setName(final String name) {
-        this.name = ((name != null) ? name : "@");
+    public void setName(String name) {
+        this.name = name != null ? name : "@";
     }
-    
+
     @Override
-    public boolean update(final boolean force, final boolean applyPhysics) {
-        final boolean result = super.update(force, applyPhysics);
-        if (result) {
-            this.commandBlock.getCommandBlockLogic().setCommand(this.command);
-            this.commandBlock.getCommandBlockLogic().setName(this.name);
-        }
-        return result;
-    }
-    
-    @Override
-    public TileEntityCommandBlock getTileEntity() {
-        return this.commandBlock;
+    public void applyTo(TileEntityCommand commandBlock) {
+        super.applyTo(commandBlock);
+
+        commandBlock.getCommandBlock().setCommand(command);
+        commandBlock.getCommandBlock().setName(name);
     }
 }

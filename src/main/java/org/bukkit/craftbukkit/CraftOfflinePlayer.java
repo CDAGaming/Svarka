@@ -1,258 +1,261 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit;
 
-import org.bukkit.metadata.MetadataStoreBase;
-import org.bukkit.plugin.Plugin;
-import java.util.List;
-import org.bukkit.metadata.MetadataValue;
-import org.bukkit.World;
-import org.bukkit.Location;
-import java.io.File;
-import net.minecraft.nbt.NBTBase;
-import org.bukkit.Bukkit;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Date;
-import org.bukkit.BanList;
-import org.bukkit.Server;
-import java.util.UUID;
-import net.minecraft.nbt.NBTTagCompound;
-import org.bukkit.entity.Player;
-import net.minecraft.world.WorldServer;
-import net.minecraft.world.storage.SaveHandler;
 import com.mojang.authlib.GameProfile;
-import org.bukkit.configuration.serialization.SerializableAs;
-import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import java.io.File;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import net.minecraft.server.EntityPlayer;
+import net.minecraft.server.NBTTagCompound;
+import net.minecraft.server.WorldNBTStorage;
+
+import org.bukkit.BanList;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.Server;
+import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.configuration.serialization.SerializableAs;
+import org.bukkit.entity.Player;
+import org.bukkit.metadata.MetadataValue;
+import org.bukkit.plugin.Plugin;
 
 @SerializableAs("Player")
-public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializable
-{
+public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializable {
     private final GameProfile profile;
     private final CraftServer server;
-    private final SaveHandler storage;
-    
-    protected CraftOfflinePlayer(final CraftServer server, final GameProfile profile) {
+    private final WorldNBTStorage storage;
+
+    protected CraftOfflinePlayer(CraftServer server, GameProfile profile) {
         this.server = server;
         this.profile = profile;
-        this.storage = (SaveHandler)server.console/*worlds.get(0)*/.worldServers[0].getSaveHandler();
+        this.storage = (WorldNBTStorage) (server.console.worlds.get(0).getDataManager());
+
     }
-    
+
     public GameProfile getProfile() {
-        return this.profile;
+        return profile;
     }
-    
-    @Override
+
     public boolean isOnline() {
-        return this.getPlayer() != null;
+        return getPlayer() != null;
     }
-    
-    @Override
+
     public String getName() {
-        final Player player = this.getPlayer();
+        Player player = getPlayer();
         if (player != null) {
             return player.getName();
         }
-        if (this.profile.getName() != null) {
-            return this.profile.getName();
+
+        // This might not match lastKnownName but if not it should be more correct
+        if (profile.getName() != null) {
+            return profile.getName();
         }
-        final NBTTagCompound data = this.getBukkitData();
-        if (data != null && data.hasKey("lastKnownName")) {
-            return data.getString("lastKnownName");
+
+        NBTTagCompound data = getBukkitData();
+
+        if (data != null) {
+            if (data.hasKey("lastKnownName")) {
+                return data.getString("lastKnownName");
+            }
         }
+
         return null;
     }
-    
-    @Override
+
     public UUID getUniqueId() {
-        return this.profile.getId();
+        return profile.getId();
     }
-    
+
     public Server getServer() {
-        return this.server;
+        return server;
     }
-    
-    @Override
+
     public boolean isOp() {
-        return this.server.getHandle().canSendCommands(this.profile);
+        return server.getHandle().isOp(profile);
     }
-    
-    @Override
-    public void setOp(final boolean value) {
-        if (value == this.isOp()) {
+
+    public void setOp(boolean value) {
+        if (value == isOp()) {
             return;
         }
+
         if (value) {
-            this.server.getHandle().addOp(this.profile);
-        }
-        else {
-            this.server.getHandle().removeOp(this.profile);
+            server.getHandle().addOp(profile);
+        } else {
+            server.getHandle().removeOp(profile);
         }
     }
-    
-    @Override
+
     public boolean isBanned() {
-        return this.getName() != null && this.server.getBanList(BanList.Type.NAME).isBanned(this.getName());
+        if (getName() == null) {
+            return false;
+        }
+
+        return server.getBanList(BanList.Type.NAME).isBanned(getName());
     }
-    
-    @Override
-    public void setBanned(final boolean value) {
-        if (this.getName() == null) {
+
+    public void setBanned(boolean value) {
+        if (getName() == null) {
             return;
         }
+
         if (value) {
-            this.server.getBanList(BanList.Type.NAME).addBan(this.getName(), null, null, null);
-        }
-        else {
-            this.server.getBanList(BanList.Type.NAME).pardon(this.getName());
+            server.getBanList(BanList.Type.NAME).addBan(getName(), null, null, null);
+        } else {
+            server.getBanList(BanList.Type.NAME).pardon(getName());
         }
     }
-    
-    @Override
+
     public boolean isWhitelisted() {
-        return this.server.getHandle().getWhitelistedPlayers().isWhitelisted(this.profile);
+        return server.getHandle().getWhitelist().isWhitelisted(profile);
     }
-    
-    @Override
-    public void setWhitelisted(final boolean value) {
+
+    public void setWhitelisted(boolean value) {
         if (value) {
-            this.server.getHandle().addWhitelistedPlayer(this.profile);
-        }
-        else {
-            this.server.getHandle().removePlayerFromWhitelist(this.profile);
+            server.getHandle().addWhitelist(profile);
+        } else {
+            server.getHandle().removeWhitelist(profile);
         }
     }
-    
-    @Override
+
     public Map<String, Object> serialize() {
-        final Map<String, Object> result = new LinkedHashMap<String, Object>();
-        result.put("UUID", this.profile.getId().toString());
+        Map<String, Object> result = new LinkedHashMap<String, Object>();
+
+        result.put("UUID", profile.getId().toString());
+
         return result;
     }
-    
-    public static OfflinePlayer deserialize(final Map<String, Object> args) {
+
+    public static OfflinePlayer deserialize(Map<String, Object> args) {
+        // Backwards comparability
         if (args.get("name") != null) {
             return Bukkit.getServer().getOfflinePlayer((String) args.get("name"));
         }
+
         return Bukkit.getServer().getOfflinePlayer(UUID.fromString((String) args.get("UUID")));
     }
-    
+
     @Override
     public String toString() {
-        return String.valueOf(this.getClass().getSimpleName()) + "[UUID=" + this.profile.getId() + "]";
+        return getClass().getSimpleName() + "[UUID=" + profile.getId() + "]";
     }
-    
-    @Override
+
     public Player getPlayer() {
-        return this.server.getPlayer(this.getUniqueId());
+        return server.getPlayer(getUniqueId());
     }
-    
+
     @Override
-    public boolean equals(final Object obj) {
+    public boolean equals(Object obj) {
         if (obj == null || !(obj instanceof OfflinePlayer)) {
             return false;
         }
-        final OfflinePlayer other = (OfflinePlayer)obj;
-        return this.getUniqueId() != null && other.getUniqueId() != null && this.getUniqueId().equals(other.getUniqueId());
+
+        OfflinePlayer other = (OfflinePlayer) obj;
+        if ((this.getUniqueId() == null) || (other.getUniqueId() == null)) {
+            return false;
+        }
+
+        return this.getUniqueId().equals(other.getUniqueId());
     }
-    
+
     @Override
     public int hashCode() {
         int hash = 5;
-        hash = 97 * hash + ((this.getUniqueId() != null) ? this.getUniqueId().hashCode() : 0);
+        hash = 97 * hash + (this.getUniqueId() != null ? this.getUniqueId().hashCode() : 0);
         return hash;
     }
-    
+
     private NBTTagCompound getData() {
-        return this.storage.getPlayerData(this.getUniqueId().toString());
+        return storage.getPlayerData(getUniqueId().toString());
     }
-    
+
     private NBTTagCompound getBukkitData() {
-        NBTTagCompound result = this.getData();
+        NBTTagCompound result = getData();
+
         if (result != null) {
             if (!result.hasKey("bukkit")) {
-                result.setTag("bukkit", new NBTTagCompound());
+                result.set("bukkit", new NBTTagCompound());
             }
-            result = result.getCompoundTag("bukkit");
+            result = result.getCompound("bukkit");
         }
+
         return result;
     }
-    
+
     private File getDataFile() {
-        return new File(this.storage.getPlayerDir(), this.getUniqueId() + ".dat");
+        return new File(storage.getPlayerDir(), getUniqueId() + ".dat");
     }
-    
-    @Override
+
     public long getFirstPlayed() {
-        final Player player = this.getPlayer();
-        if (player != null) {
-            return player.getFirstPlayed();
+        Player player = getPlayer();
+        if (player != null) return player.getFirstPlayed();
+
+        NBTTagCompound data = getBukkitData();
+
+        if (data != null) {
+            if (data.hasKey("firstPlayed")) {
+                return data.getLong("firstPlayed");
+            } else {
+                File file = getDataFile();
+                return file.lastModified();
+            }
+        } else {
+            return 0;
         }
-        final NBTTagCompound data = this.getBukkitData();
-        if (data == null) {
-            return 0L;
-        }
-        if (data.hasKey("firstPlayed")) {
-            return data.getLong("firstPlayed");
-        }
-        final File file = this.getDataFile();
-        return file.lastModified();
     }
-    
-    @Override
+
     public long getLastPlayed() {
-        final Player player = this.getPlayer();
-        if (player != null) {
-            return player.getLastPlayed();
+        Player player = getPlayer();
+        if (player != null) return player.getLastPlayed();
+
+        NBTTagCompound data = getBukkitData();
+
+        if (data != null) {
+            if (data.hasKey("lastPlayed")) {
+                return data.getLong("lastPlayed");
+            } else {
+                File file = getDataFile();
+                return file.lastModified();
+            }
+        } else {
+            return 0;
         }
-        final NBTTagCompound data = this.getBukkitData();
-        if (data == null) {
-            return 0L;
-        }
-        if (data.hasKey("lastPlayed")) {
-            return data.getLong("lastPlayed");
-        }
-        final File file = this.getDataFile();
-        return file.lastModified();
     }
-    
-    @Override
+
     public boolean hasPlayedBefore() {
-        return this.getData() != null;
+        return getData() != null;
     }
-    
-    @Override
+
     public Location getBedSpawnLocation() {
-        final NBTTagCompound data = this.getData();
-        if (data == null) {
-            return null;
-        }
+        NBTTagCompound data = getData();
+        if (data == null) return null;
+
         if (data.hasKey("SpawnX") && data.hasKey("SpawnY") && data.hasKey("SpawnZ")) {
             String spawnWorld = data.getString("SpawnWorld");
             if (spawnWorld.equals("")) {
-                spawnWorld = this.server.getWorlds().get(0).getName();
+                spawnWorld = server.getWorlds().get(0).getName();
             }
-            return new Location(this.server.getWorld(spawnWorld), data.getInteger("SpawnX"), data.getInteger("SpawnY"), data.getInteger("SpawnZ"));
+            return new Location(server.getWorld(spawnWorld), data.getInt("SpawnX"), data.getInt("SpawnY"), data.getInt("SpawnZ"));
         }
         return null;
     }
-    
-    public void setMetadata(final String metadataKey, final MetadataValue metadataValue) {
-        (/*(MetadataStoreBase<CraftOfflinePlayer>)*/this.server.getPlayerMetadata()).setMetadata(this, metadataKey, metadataValue);
+
+    public void setMetadata(String metadataKey, MetadataValue metadataValue) {
+        server.getPlayerMetadata().setMetadata(this, metadataKey, metadataValue);
     }
-    
-    public List<MetadataValue> getMetadata(final String metadataKey) {
-        return (/*(MetadataStoreBase<CraftOfflinePlayer>)*/this.server.getPlayerMetadata()).getMetadata(this, metadataKey);
+
+    public List<MetadataValue> getMetadata(String metadataKey) {
+        return server.getPlayerMetadata().getMetadata(this, metadataKey);
     }
-    
-    public boolean hasMetadata(final String metadataKey) {
-        return (/*(MetadataStoreBase<CraftOfflinePlayer>)*/this.server.getPlayerMetadata()).hasMetadata(this, metadataKey);
+
+    public boolean hasMetadata(String metadataKey) {
+        return server.getPlayerMetadata().hasMetadata(this, metadataKey);
     }
-    
-    public void removeMetadata(final String metadataKey, final Plugin plugin) {
-        (/*(MetadataStoreBase<CraftOfflinePlayer>)*/this.server.getPlayerMetadata()).removeMetadata(this, metadataKey, plugin);
+
+    public void removeMetadata(String metadataKey, Plugin plugin) {
+        server.getPlayerMetadata().removeMetadata(this, metadataKey, plugin);
     }
 }

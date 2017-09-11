@@ -1,32 +1,25 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import org.bukkit.entity.EntityType;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.item.EntityEnderEye;
+import net.minecraft.server.EntityEnderSignal;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EnderSignal;
+import org.bukkit.entity.EntityType;
 
-public class CraftEnderSignal extends CraftEntity implements EnderSignal
-{
-    public CraftEnderSignal(final CraftServer server, final EntityEnderEye entity) {
+public class CraftEnderSignal extends CraftEntity implements EnderSignal {
+    public CraftEnderSignal(CraftServer server, EntityEnderSignal entity) {
         super(server, entity);
     }
-    
+
     @Override
-    public EntityEnderEye getHandle() {
-        return (EntityEnderEye)this.entity;
+    public EntityEnderSignal getHandle() {
+        return (EntityEnderSignal) entity;
     }
-    
+
     @Override
     public String toString() {
         return "CraftEnderSignal";
     }
-    
-    @Override
+
     public EntityType getType() {
         return EntityType.ENDER_SIGNAL;
     }

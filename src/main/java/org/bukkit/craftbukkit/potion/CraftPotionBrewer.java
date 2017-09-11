@@ -1,51 +1,48 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.potion;
 
-import org.bukkit.potion.PotionEffectType;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import com.google.common.collect.ImmutableList;
-import org.bukkit.potion.PotionData;
-import com.google.common.collect.Maps;
-import org.bukkit.potion.PotionEffect;
 import java.util.Collection;
-import org.bukkit.potion.PotionType;
+import java.util.List;
 import java.util.Map;
-import org.bukkit.potion.PotionBrewer;
 
-public class CraftPotionBrewer implements PotionBrewer
-{
-    private static final Map<PotionType, Collection<PotionEffect>> cache;
-    
-    static {
-        cache = Maps.newHashMap();
-    }
-    
-    @Override
-    public Collection<PotionEffect> getEffects(final PotionType damage, final boolean upgraded, final boolean extended) {
-        if (CraftPotionBrewer.cache.containsKey(damage)) {
-            return CraftPotionBrewer.cache.get(damage);
-        }
-        final List<net.minecraft.potion.PotionEffect> mcEffects = net.minecraft.potion.PotionType.getPotionTypeForName(CraftPotionUtil.fromBukkit(new PotionData(damage, extended, upgraded))).getEffects();
-        final ImmutableList.Builder<PotionEffect> builder = (ImmutableList.Builder<PotionEffect>)new ImmutableList.Builder();
-        for (final net.minecraft.potion.PotionEffect effect : mcEffects) {
+import net.minecraft.server.MobEffect;
+import net.minecraft.server.PotionRegistry;
+
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionType;
+import org.bukkit.potion.PotionBrewer;
+import org.bukkit.potion.PotionData;
+import org.bukkit.potion.PotionEffect;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
+
+public class CraftPotionBrewer implements PotionBrewer {
+    private static final Map<PotionType, Collection<PotionEffect>> cache = Maps.newHashMap();
+
+    public Collection<PotionEffect> getEffects(PotionType damage, boolean upgraded, boolean extended) {
+        if (cache.containsKey(damage))
+            return cache.get(damage);
+
+        List<MobEffect> mcEffects = PotionRegistry.a(CraftPotionUtil.fromBukkit(new PotionData(damage, extended, upgraded))).a();
+
+        ImmutableList.Builder<PotionEffect> builder = new ImmutableList.Builder<PotionEffect>();
+        for (MobEffect effect : mcEffects) {
             builder.add(CraftPotionUtil.toBukkit(effect));
         }
-        CraftPotionBrewer.cache.put(damage, (Collection<PotionEffect>)builder.build());
-        return CraftPotionBrewer.cache.get(damage);
+
+        cache.put(damage, builder.build());
+
+        return cache.get(damage);
     }
-    
+
     @Override
-    public Collection<PotionEffect> getEffectsFromDamage(final int damage) {
+    public Collection<PotionEffect> getEffectsFromDamage(int damage) {
         return new ArrayList<PotionEffect>();
     }
-    
+
     @Override
-    public PotionEffect createEffect(final PotionEffectType potion, final int duration, final int amplifier) {
-        return new PotionEffect(potion, potion.isInstant() ? 1 : ((int)(duration * potion.getDurationModifier())), amplifier);
+    public PotionEffect createEffect(PotionEffectType potion, int duration, int amplifier) {
+        return new PotionEffect(potion, potion.isInstant() ? 1 : (int) (duration * potion.getDurationModifier()), amplifier);
     }
 }

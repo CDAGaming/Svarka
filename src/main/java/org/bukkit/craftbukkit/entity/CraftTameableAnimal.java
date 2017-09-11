@@ -1,92 +1,81 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import org.bukkit.event.entity.EntityTargetEvent;
-import net.minecraft.entity.EntityLivingBase;
-import org.bukkit.entity.AnimalTamer;
-import java.util.UUID;
-import net.minecraft.entity.passive.EntityAnimal;
-import net.minecraft.entity.passive.EntityTameable;
+import net.minecraft.server.EntityTameableAnimal;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.Creature;
 import org.bukkit.entity.Tameable;
 
-public class CraftTameableAnimal extends CraftAnimals implements Tameable, Creature
-{
-    public CraftTameableAnimal(final CraftServer server, final EntityTameable entity) {
+import java.util.UUID;
+
+public class CraftTameableAnimal extends CraftAnimals implements Tameable, Creature {
+    public CraftTameableAnimal(CraftServer server, EntityTameableAnimal entity) {
         super(server, entity);
     }
-    
+
     @Override
-    public EntityTameable getHandle() {
-        return (EntityTameable)super.getHandle();
+    public EntityTameableAnimal getHandle() {
+        return (EntityTameableAnimal)super.getHandle();
     }
-    
+
     public UUID getOwnerUUID() {
         try {
-            return this.getHandle().getOwnerId();
-        }
-        catch (IllegalArgumentException ex) {
+            return getHandle().getOwnerUUID();
+        } catch (IllegalArgumentException ex) {
             return null;
         }
     }
-    
-    public void setOwnerUUID(final UUID uuid) {
-        this.getHandle().setOwnerId(uuid);
+
+    public void setOwnerUUID(UUID uuid) {
+        getHandle().setOwnerUUID(uuid);
     }
-    
-    @Override
+
     public AnimalTamer getOwner() {
-        if (this.getOwnerUUID() == null) {
+        if (getOwnerUUID() == null) {
             return null;
         }
-        AnimalTamer owner = this.getServer().getPlayer(this.getOwnerUUID());
+
+        AnimalTamer owner = getServer().getPlayer(getOwnerUUID());
         if (owner == null) {
-            owner = this.getServer().getOfflinePlayer(this.getOwnerUUID());
+            owner = getServer().getOfflinePlayer(getOwnerUUID());
         }
+
         return owner;
     }
-    
-    @Override
+
     public boolean isTamed() {
-        return this.getHandle().isTamed();
+        return getHandle().isTamed();
     }
-    
-    @Override
-    public void setOwner(final AnimalTamer tamer) {
+
+    public void setOwner(AnimalTamer tamer) {
         if (tamer != null) {
-            this.setTamed(true);
-            this.getHandle().setGoalTarget(null, null, false);
-            this.setOwnerUUID(tamer.getUniqueId());
-        }
-        else {
-            this.setTamed(false);
-            this.setOwnerUUID(null);
+            setTamed(true);
+            getHandle().setGoalTarget(null, null, false);
+            setOwnerUUID(tamer.getUniqueId());
+        } else {
+            setTamed(false);
+            setOwnerUUID(null);
         }
     }
-    
-    @Override
-    public void setTamed(final boolean tame) {
-        this.getHandle().setTamed(tame);
+
+    public void setTamed(boolean tame) {
+        getHandle().setTamed(tame);
         if (!tame) {
-            this.setOwnerUUID(null);
+            setOwnerUUID(null);
         }
     }
-    
+
     public boolean isSitting() {
-        return this.getHandle().isSitting();
+        return getHandle().isSitting();
     }
-    
-    public void setSitting(final boolean sitting) {
-        this.getHandle().setSitting(sitting);
-        this.getHandle().getAISit().setSitting(sitting);
+
+    public void setSitting(boolean sitting) {
+        getHandle().setSitting(sitting);
+        getHandle().getGoalSit().setSitting(sitting);
     }
-    
+
     @Override
     public String toString() {
-        return String.valueOf(this.getClass().getSimpleName()) + "{owner=" + this.getOwner() + ",tamed=" + this.isTamed() + "}";
+        return getClass().getSimpleName() + "{owner=" + getOwner() + ",tamed=" + isTamed() + "}";
     }
 }

@@ -1,76 +1,60 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.entity.EntityLivingBase;
-import org.bukkit.entity.EntityType;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.item.EntityTNTPrimed;
+import net.minecraft.server.EntityLiving;
+import net.minecraft.server.EntityTNTPrimed;
+
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.TNTPrimed;
 
-public class CraftTNTPrimed extends CraftEntity implements TNTPrimed
-{
-    public CraftTNTPrimed(final CraftServer server, final EntityTNTPrimed entity) {
+public class CraftTNTPrimed extends CraftEntity implements TNTPrimed {
+
+    public CraftTNTPrimed(CraftServer server, EntityTNTPrimed entity) {
         super(server, entity);
     }
-    
-    @Override
+
     public float getYield() {
-        return this.getHandle().yield;
+        return getHandle().yield;
     }
-    
-    @Override
+
     public boolean isIncendiary() {
-        return this.getHandle().isIncendiary;
+        return getHandle().isIncendiary;
     }
-    
-    @Override
-    public void setIsIncendiary(final boolean isIncendiary) {
-        this.getHandle().isIncendiary = isIncendiary;
+
+    public void setIsIncendiary(boolean isIncendiary) {
+        getHandle().isIncendiary = isIncendiary;
     }
-    
-    @Override
-    public void setYield(final float yield) {
-        this.getHandle().yield = yield;
+
+    public void setYield(float yield) {
+        getHandle().yield = yield;
     }
-    
-    @Override
+
     public int getFuseTicks() {
-        return this.getHandle().getFuse();
+        return getHandle().getFuseTicks();
     }
-    
-    @Override
-    public void setFuseTicks(final int fuseTicks) {
-        this.getHandle().setFuse(fuseTicks);
+
+    public void setFuseTicks(int fuseTicks) {
+        getHandle().setFuseTicks(fuseTicks);
     }
-    
+
     @Override
     public EntityTNTPrimed getHandle() {
-        return (EntityTNTPrimed)this.entity;
+        return (EntityTNTPrimed) entity;
     }
-    
+
     @Override
     public String toString() {
         return "CraftTNTPrimed";
     }
-    
-    @Override
+
     public EntityType getType() {
         return EntityType.PRIMED_TNT;
     }
-    
-    @Override
-    public org.bukkit.entity.Entity getSource() {
-        final EntityLivingBase source = this.getHandle().getTntPlacedBy();
-        if (source != null) {
-            final org.bukkit.entity.Entity bukkitEntity = source.getBukkitEntity();
-            if (bukkitEntity.isValid()) {
-                return bukkitEntity;
-            }
-        }
-        return null;
+
+    public Entity getSource() {
+        EntityLiving source = getHandle().getSource();
+
+        return (source != null) ? source.getBukkitEntity() : null;
     }
 }

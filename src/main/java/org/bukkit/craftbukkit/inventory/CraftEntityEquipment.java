@@ -1,213 +1,193 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.inventory;
 
-import net.minecraft.entity.EntityLiving;
-import org.bukkit.entity.Entity;
-import net.minecraft.inventory.EntityEquipmentSlot;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.craftbukkit.entity.CraftLivingEntity;
-import org.bukkit.inventory.EntityEquipment;
+import net.minecraft.server.EntityInsentient;
+import net.minecraft.server.EnumItemSlot;
 
-public class CraftEntityEquipment implements EntityEquipment
-{
+import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.entity.Entity;
+import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.inventory.ItemStack;
+
+public class CraftEntityEquipment implements EntityEquipment {
+
     private final CraftLivingEntity entity;
-    
-    public CraftEntityEquipment(final CraftLivingEntity entity) {
+
+    public CraftEntityEquipment(CraftLivingEntity entity) {
         this.entity = entity;
     }
-    
+
     @Override
     public ItemStack getItemInMainHand() {
-        return this.getEquipment(EntityEquipmentSlot.MAINHAND);
+        return getEquipment(EnumItemSlot.MAINHAND);
     }
-    
+
     @Override
-    public void setItemInMainHand(final ItemStack item) {
-        this.setEquipment(EntityEquipmentSlot.MAINHAND, item);
+    public void setItemInMainHand(ItemStack item) {
+        setEquipment(EnumItemSlot.MAINHAND, item);
     }
-    
+
     @Override
     public ItemStack getItemInOffHand() {
-        return this.getEquipment(EntityEquipmentSlot.OFFHAND);
+        return getEquipment(EnumItemSlot.OFFHAND);
     }
-    
+
     @Override
-    public void setItemInOffHand(final ItemStack item) {
-        this.setEquipment(EntityEquipmentSlot.OFFHAND, item);
+    public void setItemInOffHand(ItemStack item) {
+        setEquipment(EnumItemSlot.OFFHAND, item);
     }
-    
+
     @Override
     public ItemStack getItemInHand() {
-        return this.getItemInMainHand();
+        return getItemInMainHand();
     }
-    
+
     @Override
-    public void setItemInHand(final ItemStack stack) {
-        this.setItemInMainHand(stack);
+    public void setItemInHand(ItemStack stack) {
+        setItemInMainHand(stack);
     }
-    
-    @Override
+
     public ItemStack getHelmet() {
-        return this.getEquipment(EntityEquipmentSlot.HEAD);
+        return getEquipment(EnumItemSlot.HEAD);
     }
-    
-    @Override
-    public void setHelmet(final ItemStack helmet) {
-        this.setEquipment(EntityEquipmentSlot.HEAD, helmet);
+
+    public void setHelmet(ItemStack helmet) {
+        setEquipment(EnumItemSlot.HEAD, helmet);
     }
-    
-    @Override
+
     public ItemStack getChestplate() {
-        return this.getEquipment(EntityEquipmentSlot.CHEST);
+        return getEquipment(EnumItemSlot.CHEST);
     }
-    
-    @Override
-    public void setChestplate(final ItemStack chestplate) {
-        this.setEquipment(EntityEquipmentSlot.CHEST, chestplate);
+
+    public void setChestplate(ItemStack chestplate) {
+        setEquipment(EnumItemSlot.CHEST, chestplate);
     }
-    
-    @Override
+
     public ItemStack getLeggings() {
-        return this.getEquipment(EntityEquipmentSlot.LEGS);
+        return getEquipment(EnumItemSlot.LEGS);
     }
-    
-    @Override
-    public void setLeggings(final ItemStack leggings) {
-        this.setEquipment(EntityEquipmentSlot.LEGS, leggings);
+
+    public void setLeggings(ItemStack leggings) {
+        setEquipment(EnumItemSlot.LEGS, leggings);
     }
-    
-    @Override
+
     public ItemStack getBoots() {
-        return this.getEquipment(EntityEquipmentSlot.FEET);
+        return getEquipment(EnumItemSlot.FEET);
     }
-    
-    @Override
-    public void setBoots(final ItemStack boots) {
-        this.setEquipment(EntityEquipmentSlot.FEET, boots);
+
+    public void setBoots(ItemStack boots) {
+        setEquipment(EnumItemSlot.FEET, boots);
     }
-    
-    @Override
+
     public ItemStack[] getArmorContents() {
-        final ItemStack[] armor = { this.getEquipment(EntityEquipmentSlot.FEET), this.getEquipment(EntityEquipmentSlot.LEGS), this.getEquipment(EntityEquipmentSlot.CHEST), this.getEquipment(EntityEquipmentSlot.HEAD) };
+        ItemStack[] armor = new ItemStack[]{
+                getEquipment(EnumItemSlot.FEET),
+                getEquipment(EnumItemSlot.LEGS),
+                getEquipment(EnumItemSlot.CHEST),
+                getEquipment(EnumItemSlot.HEAD),
+        };
         return armor;
     }
-    
-    @Override
-    public void setArmorContents(final ItemStack[] items) {
-        this.setEquipment(EntityEquipmentSlot.FEET, (items.length >= 1) ? items[0] : null);
-        this.setEquipment(EntityEquipmentSlot.LEGS, (items.length >= 2) ? items[1] : null);
-        this.setEquipment(EntityEquipmentSlot.CHEST, (items.length >= 3) ? items[2] : null);
-        this.setEquipment(EntityEquipmentSlot.HEAD, (items.length >= 4) ? items[3] : null);
+
+    public void setArmorContents(ItemStack[] items) {
+        setEquipment(EnumItemSlot.FEET, items.length >= 1 ? items[0] : null);
+        setEquipment(EnumItemSlot.LEGS, items.length >= 2 ? items[1] : null);
+        setEquipment(EnumItemSlot.CHEST, items.length >= 3 ? items[2] : null);
+        setEquipment(EnumItemSlot.HEAD, items.length >= 4 ? items[3] : null);
     }
-    
-    private ItemStack getEquipment(final EntityEquipmentSlot slot) {
-        return CraftItemStack.asBukkitCopy(this.entity.getHandle().getItemStackFromSlot(slot));
+
+    private ItemStack getEquipment(EnumItemSlot slot) {
+        return CraftItemStack.asBukkitCopy(entity.getHandle().getEquipment(slot));
     }
-    
-    private void setEquipment(final EntityEquipmentSlot slot, final ItemStack stack) {
-        this.entity.getHandle().setItemStackToSlot(slot, CraftItemStack.asNMSCopy(stack));
+
+    private void setEquipment(EnumItemSlot slot, ItemStack stack) {
+        entity.getHandle().setSlot(slot, CraftItemStack.asNMSCopy(stack));
     }
-    
-    @Override
+
     public void clear() {
-        EntityEquipmentSlot[] values;
-        for (int length = (values = EntityEquipmentSlot.values()).length, i = 0; i < length; ++i) {
-            final EntityEquipmentSlot slot = values[i];
-            this.setEquipment(slot, null);
+        for (EnumItemSlot slot : EnumItemSlot.values()) {
+            setEquipment(slot, null);
         }
     }
-    
-    @Override
+
     public Entity getHolder() {
-        return this.entity;
+        return entity;
     }
-    
+
     @Override
     public float getItemInHandDropChance() {
-        return this.getItemInMainHandDropChance();
+        return getItemInMainHandDropChance();
     }
-    
+
     @Override
-    public void setItemInHandDropChance(final float chance) {
-        this.setItemInMainHandDropChance(chance);
+    public void setItemInHandDropChance(float chance) {
+        setItemInMainHandDropChance(chance);
     }
-    
+
     @Override
     public float getItemInMainHandDropChance() {
-        return this.getDropChance(EntityEquipmentSlot.MAINHAND);
+       return getDropChance(EnumItemSlot.MAINHAND);
     }
-    
+
     @Override
-    public void setItemInMainHandDropChance(final float chance) {
-        this.setDropChance(EntityEquipmentSlot.MAINHAND, chance);
+    public void setItemInMainHandDropChance(float chance) {
+        setDropChance(EnumItemSlot.MAINHAND, chance);
     }
-    
+
     @Override
     public float getItemInOffHandDropChance() {
-        return this.getDropChance(EntityEquipmentSlot.OFFHAND);
+        return getDropChance(EnumItemSlot.OFFHAND);
     }
-    
+
     @Override
-    public void setItemInOffHandDropChance(final float chance) {
-        this.setDropChance(EntityEquipmentSlot.OFFHAND, chance);
+    public void setItemInOffHandDropChance(float chance) {
+        setDropChance(EnumItemSlot.OFFHAND, chance);
     }
-    
-    @Override
+
     public float getHelmetDropChance() {
-        return this.getDropChance(EntityEquipmentSlot.HEAD);
+        return getDropChance(EnumItemSlot.HEAD);
     }
-    
-    @Override
-    public void setHelmetDropChance(final float chance) {
-        this.setDropChance(EntityEquipmentSlot.HEAD, chance);
+
+    public void setHelmetDropChance(float chance) {
+        setDropChance(EnumItemSlot.HEAD, chance);
     }
-    
-    @Override
+
     public float getChestplateDropChance() {
-        return this.getDropChance(EntityEquipmentSlot.CHEST);
+        return getDropChance(EnumItemSlot.CHEST);
     }
-    
-    @Override
-    public void setChestplateDropChance(final float chance) {
-        this.setDropChance(EntityEquipmentSlot.CHEST, chance);
+
+    public void setChestplateDropChance(float chance) {
+        setDropChance(EnumItemSlot.CHEST, chance);
     }
-    
-    @Override
+
     public float getLeggingsDropChance() {
-        return this.getDropChance(EntityEquipmentSlot.LEGS);
+        return getDropChance(EnumItemSlot.LEGS);
     }
-    
-    @Override
-    public void setLeggingsDropChance(final float chance) {
-        this.setDropChance(EntityEquipmentSlot.LEGS, chance);
+
+    public void setLeggingsDropChance(float chance) {
+        setDropChance(EnumItemSlot.LEGS, chance);
     }
-    
-    @Override
+
     public float getBootsDropChance() {
-        return this.getDropChance(EntityEquipmentSlot.FEET);
+        return getDropChance(EnumItemSlot.FEET);
     }
-    
-    @Override
-    public void setBootsDropChance(final float chance) {
-        this.setDropChance(EntityEquipmentSlot.FEET, chance);
+
+    public void setBootsDropChance(float chance) {
+        setDropChance(EnumItemSlot.FEET, chance);
     }
-    
-    private void setDropChance(final EntityEquipmentSlot slot, final float chance) {
-        if (slot == EntityEquipmentSlot.MAINHAND || slot == EntityEquipmentSlot.OFFHAND) {
-            ((EntityLiving)this.entity.getHandle()).inventoryHandsDropChances[slot.getIndex()] = chance - 0.1f;
-        }
-        else {
-            ((EntityLiving)this.entity.getHandle()).inventoryArmorDropChances[slot.getIndex()] = chance - 0.1f;
+
+    private void setDropChance(EnumItemSlot slot, float chance) {
+        if (slot == EnumItemSlot.MAINHAND || slot == EnumItemSlot.OFFHAND) {
+            ((EntityInsentient) entity.getHandle()).dropChanceHand[slot.b()] = chance - 0.1F;
+        } else {
+            ((EntityInsentient) entity.getHandle()).dropChanceArmor[slot.b()] = chance - 0.1F;
         }
     }
-    
-    private float getDropChance(final EntityEquipmentSlot slot) {
-        if (slot == EntityEquipmentSlot.MAINHAND || slot == EntityEquipmentSlot.OFFHAND) {
-            return ((EntityLiving)this.entity.getHandle()).inventoryHandsDropChances[slot.getIndex()] + 0.1f;
+
+    private float getDropChance(EnumItemSlot slot) {
+        if (slot == EnumItemSlot.MAINHAND || slot == EnumItemSlot.OFFHAND) {
+            return ((EntityInsentient) entity.getHandle()).dropChanceHand[slot.b()] + 0.1F;
+        } else {
+            return ((EntityInsentient) entity.getHandle()).dropChanceArmor[slot.b()] + 0.1F;
         }
-        return ((EntityLiving)this.entity.getHandle()).inventoryArmorDropChances[slot.getIndex()] + 0.1f;
     }
 }

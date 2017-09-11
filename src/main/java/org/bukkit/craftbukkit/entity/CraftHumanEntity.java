@@ -1,458 +1,481 @@
-// 
-// Decompiled by Procyon v0.5.30
-// 
-
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.entity.passive.EntityVillager;
-import net.minecraft.entity.IMerchant;
 import com.google.common.base.Preconditions;
-import org.bukkit.entity.Villager;
-import org.bukkit.craftbukkit.inventory.CraftInventoryView;
-import net.minecraft.network.play.client.CPacketCloseWindow;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.tileentity.TileEntityEnchantmentTable;
-import org.bukkit.block.Block;
-import net.minecraft.block.BlockWorkbench;
-import net.minecraft.util.math.BlockPos;
-import org.bukkit.Material;
+import java.util.Set;
+
+import net.minecraft.server.*;
+
+import org.bukkit.GameMode;
 import org.bukkit.Location;
-import net.minecraft.inventory.IContainerListener;
-import net.minecraft.network.Packet;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.network.play.server.SPacketOpenWindow;
-import net.minecraft.util.text.TextComponentString;
+import org.bukkit.inventory.MainHand;
+import org.bukkit.inventory.Merchant;
+import org.bukkit.Material;
+import org.bukkit.entity.HumanEntity;
+import org.bukkit.entity.Villager;
+import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryView;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftContainer;
-import net.minecraft.inventory.Container;
-import org.bukkit.event.inventory.InventoryType;
-import net.minecraft.world.IInteractionObject;
-import ru.svarka.inventory.CBContainer;
-import net.minecraft.block.BlockAnvil;
-import net.minecraft.tileentity.TileEntityBeacon;
-import net.minecraft.entity.item.EntityMinecartHopper;
-import net.minecraft.tileentity.TileEntityHopper;
-import net.minecraft.tileentity.TileEntityBrewingStand;
-import net.minecraft.tileentity.TileEntityFurnace;
-import net.minecraft.tileentity.TileEntityDropper;
-import net.minecraft.tileentity.TileEntityDispenser;
-import org.bukkit.craftbukkit.inventory.InventoryWrapper;
-import org.bukkit.inventory.InventoryView;
-import org.bukkit.permissions.PermissionAttachmentInfo;
-import java.util.Set;
-import org.bukkit.permissions.PermissionAttachment;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.permissions.Permission;
-import net.minecraft.entity.player.EntityPlayerMP;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
-import org.bukkit.inventory.ItemStack;
-import net.minecraft.util.EnumHandSide;
-import org.bukkit.inventory.MainHand;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.EntityEquipment;
-import org.bukkit.inventory.PlayerInventory;
-import net.minecraft.inventory.IInventory;
-import org.bukkit.permissions.ServerOperator;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.GameMode;
-import org.bukkit.permissions.PermissibleBase;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.inventory.CraftInventoryPlayer;
-import org.bukkit.entity.HumanEntity;
+import org.bukkit.craftbukkit.inventory.CraftInventoryView;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.inventory.CraftMerchant;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.permissions.PermissibleBase;
+import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.PermissionAttachment;
+import org.bukkit.permissions.PermissionAttachmentInfo;
+import org.bukkit.plugin.Plugin;
 
-public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity
-{
+public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     private CraftInventoryPlayer inventory;
     private final CraftInventory enderChest;
-    protected final PermissibleBase perm;
+    protected final PermissibleBase perm = new PermissibleBase(this);
     private boolean op;
     private GameMode mode;
-    
-    public CraftHumanEntity(final CraftServer server, final EntityPlayer entity) {
+
+    public CraftHumanEntity(final CraftServer server, final EntityHuman entity) {
         super(server, entity);
-        this.perm = new PermissibleBase(this);
-        this.mode = server.getDefaultGameMode();
+        mode = server.getDefaultGameMode();
         this.inventory = new CraftInventoryPlayer(entity.inventory);
-        this.enderChest = new CraftInventory(entity.getInventoryEnderChest());
+        enderChest = new CraftInventory(entity.getEnderChest());
     }
-    
-    @Override
+
     public String getName() {
-        return this.getHandle().getName();
+        return getHandle().getName();
     }
-    
-    @Override
+
     public PlayerInventory getInventory() {
-        return this.inventory;
+        return inventory;
     }
-    
-    @Override
+
     public EntityEquipment getEquipment() {
-        return this.inventory;
+        return inventory;
     }
-    
-    @Override
+
     public Inventory getEnderChest() {
-        return this.enderChest;
+        return enderChest;
     }
-    
-    @Override
+
     public MainHand getMainHand() {
-        return (this.getHandle().getPrimaryHand() == EnumHandSide.LEFT) ? MainHand.LEFT : MainHand.RIGHT;
+        return getHandle().getMainHand()== EnumMainHand.LEFT ? MainHand.LEFT : MainHand.RIGHT;
     }
-    
-    @Override
+
     public ItemStack getItemInHand() {
-        return this.getInventory().getItemInHand();
+        return getInventory().getItemInHand();
     }
-    
-    @Override
-    public void setItemInHand(final ItemStack item) {
-        this.getInventory().setItemInHand(item);
+
+    public void setItemInHand(ItemStack item) {
+        getInventory().setItemInHand(item);
     }
-    
-    @Override
+
     public ItemStack getItemOnCursor() {
-        return CraftItemStack.asCraftMirror(this.getHandle().inventory.getItemStack());
+        return CraftItemStack.asCraftMirror(getHandle().inventory.getCarried());
     }
-    
-    @Override
-    public void setItemOnCursor(final ItemStack item) {
-        final net.minecraft.item.ItemStack stack = CraftItemStack.asNMSCopy(item);
-        this.getHandle().inventory.setItemStack(stack);
+
+    public void setItemOnCursor(ItemStack item) {
+        net.minecraft.server.ItemStack stack = CraftItemStack.asNMSCopy(item);
+        getHandle().inventory.setCarried(stack);
         if (this instanceof CraftPlayer) {
-            ((EntityPlayerMP)this.getHandle()).updateHeldItem();
+            ((EntityPlayer) getHandle()).broadcastCarriedItem(); // Send set slot for cursor
         }
     }
-    
-    @Override
+
     public boolean isSleeping() {
-        return this.getHandle().sleeping;
+        return getHandle().sleeping;
     }
-    
-    @Override
+
     public int getSleepTicks() {
-        return this.getHandle().sleepTimer;
+        return getHandle().sleepTicks;
     }
-    
-    @Override
+
     public boolean isOp() {
-        return this.op;
+        return op;
     }
-    
-    @Override
-    public boolean isPermissionSet(final String name) {
-        return this.perm.isPermissionSet(name);
+
+    public boolean isPermissionSet(String name) {
+        return perm.isPermissionSet(name);
     }
-    
-    @Override
-    public boolean isPermissionSet(final Permission perm) {
+
+    public boolean isPermissionSet(Permission perm) {
         return this.perm.isPermissionSet(perm);
     }
-    
-    @Override
-    public boolean hasPermission(final String name) {
-        return this.perm.hasPermission(name);
+
+    public boolean hasPermission(String name) {
+        return perm.hasPermission(name);
     }
-    
-    @Override
-    public boolean hasPermission(final Permission perm) {
+
+    public boolean hasPermission(Permission perm) {
         return this.perm.hasPermission(perm);
     }
-    
-    @Override
-    public PermissionAttachment addAttachment(final Plugin plugin, final String name, final boolean value) {
-        return this.perm.addAttachment(plugin, name, value);
+
+    public PermissionAttachment addAttachment(Plugin plugin, String name, boolean value) {
+        return perm.addAttachment(plugin, name, value);
     }
-    
-    @Override
-    public PermissionAttachment addAttachment(final Plugin plugin) {
-        return this.perm.addAttachment(plugin);
+
+    public PermissionAttachment addAttachment(Plugin plugin) {
+        return perm.addAttachment(plugin);
     }
-    
-    @Override
-    public PermissionAttachment addAttachment(final Plugin plugin, final String name, final boolean value, final int ticks) {
-        return this.perm.addAttachment(plugin, name, value, ticks);
+
+    public PermissionAttachment addAttachment(Plugin plugin, String name, boolean value, int ticks) {
+        return perm.addAttachment(plugin, name, value, ticks);
     }
-    
-    @Override
-    public PermissionAttachment addAttachment(final Plugin plugin, final int ticks) {
-        return this.perm.addAttachment(plugin, ticks);
+
+    public PermissionAttachment addAttachment(Plugin plugin, int ticks) {
+        return perm.addAttachment(plugin, ticks);
     }
-    
-    @Override
-    public void removeAttachment(final PermissionAttachment attachment) {
-        this.perm.removeAttachment(attachment);
+
+    public void removeAttachment(PermissionAttachment attachment) {
+        perm.removeAttachment(attachment);
     }
-    
-    @Override
+
     public void recalculatePermissions() {
-        this.perm.recalculatePermissions();
+        perm.recalculatePermissions();
     }
-    
-    @Override
-    public void setOp(final boolean value) {
+
+    public void setOp(boolean value) {
         this.op = value;
-        this.perm.recalculatePermissions();
+        perm.recalculatePermissions();
     }
-    
-    @Override
+
     public Set<PermissionAttachmentInfo> getEffectivePermissions() {
-        return this.perm.getEffectivePermissions();
+        return perm.getEffectivePermissions();
     }
-    
-    @Override
+
     public GameMode getGameMode() {
-        return this.mode;
+        return mode;
     }
-    
-    @Override
-    public void setGameMode(final GameMode mode) {
+
+    public void setGameMode(GameMode mode) {
         if (mode == null) {
             throw new IllegalArgumentException("Mode cannot be null");
         }
+
         this.mode = mode;
     }
-    
+
     @Override
-    public EntityPlayer getHandle() {
-        return (EntityPlayer)this.entity;
+    public EntityHuman getHandle() {
+        return (EntityHuman) entity;
     }
-    
-    public void setHandle(final EntityPlayer entity) {
+
+    public void setHandle(final EntityHuman entity) {
         super.setHandle(entity);
         this.inventory = new CraftInventoryPlayer(entity.inventory);
     }
-    
+
     @Override
     public String toString() {
-        return "CraftHumanEntity{id=" + this.getEntityId() + "name=" + this.getName() + '}';
+        return "CraftHumanEntity{" + "id=" + getEntityId() + "name=" + getName() + '}';
     }
-    
-    @Override
+
     public InventoryView getOpenInventory() {
-        return ((CBContainer)this.getHandle().openContainer).getBukkitView();
+        return getHandle().activeContainer.getBukkitView();
     }
-    
-    @Override
-    public InventoryView openInventory(final Inventory inventory) {
-        if (!(this.getHandle() instanceof EntityPlayerMP)) {
-            return null;
-        }
-        final EntityPlayerMP player = (EntityPlayerMP)this.getHandle();
-        final InventoryType type = inventory.getType();
-        final Container formerContainer = this.getHandle().openContainer;
-        final IInventory iinventory = (inventory instanceof CraftInventory) ? ((CraftInventory)inventory).getInventory() : new InventoryWrapper(inventory);
+
+    public InventoryView openInventory(Inventory inventory) {
+        if(!(getHandle() instanceof EntityPlayer)) return null;
+        EntityPlayer player = (EntityPlayer) getHandle();
+        InventoryType type = inventory.getType();
+        Container formerContainer = getHandle().activeContainer;
+
+        IInventory iinventory = (inventory instanceof CraftInventory) ? ((CraftInventory) inventory).getInventory() : new org.bukkit.craftbukkit.inventory.InventoryWrapper(inventory);
+
         switch (type) {
-            case CHEST:
             case PLAYER:
-            case ENDER_CHEST: {
-                this.getHandle().displayGUIChest(iinventory);
+            case CHEST:
+            case ENDER_CHEST:
+                getHandle().openContainer(iinventory);
                 break;
-            }
-            case DISPENSER: {
+            case DISPENSER:
                 if (iinventory instanceof TileEntityDispenser) {
-                    this.getHandle().displayGUIChest(iinventory);
-                    break;
+                    getHandle().openContainer((TileEntityDispenser) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, "minecraft:dispenser");
                 }
-                this.openCustomInventory(inventory, player, "minecraft:dispenser");
                 break;
-            }
-            case DROPPER: {
+            case DROPPER:
                 if (iinventory instanceof TileEntityDropper) {
-                    this.getHandle().displayGUIChest(iinventory);
-                    break;
+                    getHandle().openContainer((TileEntityDropper) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, "minecraft:dropper");
                 }
-                this.openCustomInventory(inventory, player, "minecraft:dropper");
                 break;
-            }
-            case FURNACE: {
+            case FURNACE:
                 if (iinventory instanceof TileEntityFurnace) {
-                    this.getHandle().displayGUIChest(iinventory);
-                    break;
+                    getHandle().openContainer((TileEntityFurnace) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, "minecraft:furnace");
                 }
-                this.openCustomInventory(inventory, player, "minecraft:furnace");
                 break;
-            }
-            case WORKBENCH: {
-                this.openCustomInventory(inventory, player, "minecraft:crafting_table");
+            case WORKBENCH:
+                openCustomInventory(inventory, player, "minecraft:crafting_table");
                 break;
-            }
-            case BREWING: {
+            case BREWING:
                 if (iinventory instanceof TileEntityBrewingStand) {
-                    this.getHandle().displayGUIChest(iinventory);
-                    break;
+                    getHandle().openContainer((TileEntityBrewingStand) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, "minecraft:brewing_stand");
                 }
-                this.openCustomInventory(inventory, player, "minecraft:brewing_stand");
                 break;
-            }
-            case ENCHANTING: {
-                this.openCustomInventory(inventory, player, "minecraft:enchanting_table");
+            case ENCHANTING:
+                openCustomInventory(inventory, player, "minecraft:enchanting_table");
                 break;
-            }
-            case HOPPER: {
+            case HOPPER:
                 if (iinventory instanceof TileEntityHopper) {
-                    this.getHandle().displayGUIChest(iinventory);
-                    break;
+                    getHandle().openContainer((TileEntityHopper) iinventory);
+                } else if (iinventory instanceof EntityMinecartHopper) {
+                    getHandle().openContainer((EntityMinecartHopper) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, "minecraft:hopper");
                 }
-                if (iinventory instanceof EntityMinecartHopper) {
-                    this.getHandle().displayGUIChest(iinventory);
-                    break;
-                }
-                this.openCustomInventory(inventory, player, "minecraft:hopper");
                 break;
-            }
-            case BEACON: {
+            case BEACON:
                 if (iinventory instanceof TileEntityBeacon) {
-                    this.getHandle().displayGUIChest(iinventory);
-                    break;
+                    getHandle().openContainer((TileEntityBeacon) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, "minecraft:beacon");
                 }
-                this.openCustomInventory(inventory, player, "minecraft:beacon");
                 break;
-            }
-            case ANVIL: {
-                if (iinventory instanceof BlockAnvil.Anvil) {
-                    this.getHandle().displayGui((IInteractionObject)iinventory);
-                    break;
+            case ANVIL:
+                if (iinventory instanceof BlockAnvil.TileEntityContainerAnvil) {
+                    getHandle().openTileEntity((BlockAnvil.TileEntityContainerAnvil) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, "minecraft:anvil");
                 }
-                this.openCustomInventory(inventory, player, "minecraft:anvil");
                 break;
-            }
+            case SHULKER_BOX:
+                if (iinventory instanceof TileEntityShulkerBox) {
+                    getHandle().openTileEntity((TileEntityShulkerBox) iinventory);
+                } else {
+                    openCustomInventory(inventory, player, "minecraft:shulker_box");
+                }
+                break;
+            case CREATIVE:
             case CRAFTING:
-            case CREATIVE: {
                 throw new IllegalArgumentException("Can't open a " + type + " inventory!");
-            }
         }
-        if (this.getHandle().openContainer == formerContainer) {
+        if (getHandle().activeContainer == formerContainer) {
             return null;
         }
-        ((CBContainer)this.getHandle().openContainer).checkReachable = false;
-        return ((CBContainer)this.getHandle().openContainer).getBukkitView();
+        getHandle().activeContainer.checkReachable = false;
+        return getHandle().activeContainer.getBukkitView();
     }
-    
-    private void openCustomInventory(final Inventory inventory, final EntityPlayerMP player, final String windowType) {
-        if (player.connection == null) {
-            return;
-        }
-        CBContainer container = new CraftContainer(inventory, this, player.nextContainerCounter());
-        container = (CBContainer) CraftEventFactory.callInventoryOpenEvent(player, container);
-        if (container == null) {
-            return;
-        }
-        final String title = container.getBukkitView().getTitle();
+
+    private void openCustomInventory(Inventory inventory, EntityPlayer player, String windowType) {
+        if (player.playerConnection == null) return;
+        Container container = new CraftContainer(inventory, this.getHandle(), player.nextContainerCounter());
+
+        container = CraftEventFactory.callInventoryOpenEvent(player, container);
+        if(container == null) return;
+
+        String title = container.getBukkitView().getTitle();
         int size = container.getBukkitView().getTopInventory().getSize();
-        if (windowType.equals("minecraft:crafting_table") || windowType.equals("minecraft:anvil") || windowType.equals("minecraft:enchanting_table")) {
+
+        // Special cases
+        if (windowType.equals("minecraft:crafting_table") 
+                || windowType.equals("minecraft:anvil")
+                || windowType.equals("minecraft:enchanting_table")
+                ) {
             size = 0;
         }
-        player.connection.sendPacket(new SPacketOpenWindow(container.windowId, windowType, new TextComponentString(title), size));
-        (this.getHandle().openContainer = container).addListener(player);
+
+        player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, new ChatComponentText(title), size));
+        getHandle().activeContainer = container;
+        getHandle().activeContainer.addSlotListener(player);
     }
-    
-    @Override
-    public InventoryView openWorkbench(Location location, final boolean force) {
+
+    public InventoryView openWorkbench(Location location, boolean force) {
         if (!force) {
-            final Block block = location.getBlock();
+            Block block = location.getBlock();
             if (block.getType() != Material.WORKBENCH) {
                 return null;
             }
         }
         if (location == null) {
-            location = this.getLocation();
+            location = getLocation();
         }
-        this.getHandle().displayGui(new BlockWorkbench.InterfaceCraftingTable(this.getHandle().worldObj, new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ())));
+        getHandle().openTileEntity(new BlockWorkbench.TileEntityContainerWorkbench(getHandle().world, new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ())));
         if (force) {
-        	((CBContainer)this.getHandle().openContainer).checkReachable = false;
+            getHandle().activeContainer.checkReachable = false;
         }
-        return ((CBContainer)this.getHandle().openContainer).getBukkitView();
+        return getHandle().activeContainer.getBukkitView();
     }
-    
-    @Override
-    public InventoryView openEnchanting(Location location, final boolean force) {
+
+    public InventoryView openEnchanting(Location location, boolean force) {
         if (!force) {
-            final Block block = location.getBlock();
+            Block block = location.getBlock();
             if (block.getType() != Material.ENCHANTMENT_TABLE) {
                 return null;
             }
         }
         if (location == null) {
-            location = this.getLocation();
+            location = getLocation();
         }
-        TileEntity container = this.getHandle().worldObj.getTileEntity(new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
+
+        // If there isn't an enchant table we can force create one, won't be very useful though.
+        TileEntity container = getHandle().world.getTileEntity(new BlockPosition(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
         if (container == null && force) {
-            container = new TileEntityEnchantmentTable();
+            container = new TileEntityEnchantTable();
         }
-        this.getHandle().displayGui((IInteractionObject)container);
+        getHandle().openTileEntity((ITileEntityContainer) container);
+
         if (force) {
-        	((CBContainer)this.getHandle().openContainer).checkReachable = false;
+            getHandle().activeContainer.checkReachable = false;
         }
-        return ((CBContainer)this.getHandle().openContainer).getBukkitView();
+        return getHandle().activeContainer.getBukkitView();
     }
-    
-    @Override
-    public void openInventory(final InventoryView inventory) {
-        if (!(this.getHandle() instanceof EntityPlayerMP)) {
-            return;
+
+    public void openInventory(InventoryView inventory) {
+        if (!(getHandle() instanceof EntityPlayer)) return; // TODO: NPC support?
+        if (((EntityPlayer) getHandle()).playerConnection == null) return;
+        if (getHandle().activeContainer != getHandle().defaultContainer) {
+            // fire INVENTORY_CLOSE if one already open
+            ((EntityPlayer)getHandle()).playerConnection.a(new PacketPlayInCloseWindow(getHandle().activeContainer.windowId));
         }
-        if (((EntityPlayerMP)this.getHandle()).connection == null) {
-            return;
-        }
-        if (this.getHandle().openContainer != this.getHandle().inventoryContainer) {
-            ((EntityPlayerMP)this.getHandle()).connection.processCloseWindow(new CPacketCloseWindow(this.getHandle().openContainer.windowId));
-        }
-        final EntityPlayerMP player = (EntityPlayerMP)this.getHandle();
+        EntityPlayer player = (EntityPlayer) getHandle();
         Container container;
         if (inventory instanceof CraftInventoryView) {
-            container = ((CraftInventoryView)inventory).getHandle();
+            container = ((CraftInventoryView) inventory).getHandle();
+        } else {
+            container = new CraftContainer(inventory, this.getHandle(), player.nextContainerCounter());
         }
-        else {
-            container = new CraftContainer(inventory, player.nextContainerCounter());
-        }
+
+        // Trigger an INVENTORY_OPEN event
         container = CraftEventFactory.callInventoryOpenEvent(player, container);
         if (container == null) {
             return;
         }
-        final InventoryType type = inventory.getType();
-        final String windowType = CraftContainer.getNotchInventoryType(type);
-        final String title = inventory.getTitle();
-        final int size = inventory.getTopInventory().getSize();
-        player.connection.sendPacket(new SPacketOpenWindow(container.windowId, windowType, new TextComponentString(title), size));
-        (player.openContainer = container).addListener(player);
+
+        // Now open the window
+        InventoryType type = inventory.getType();
+        String windowType = CraftContainer.getNotchInventoryType(type);
+        String title = inventory.getTitle();
+        int size = inventory.getTopInventory().getSize();
+        player.playerConnection.sendPacket(new PacketPlayOutOpenWindow(container.windowId, windowType, new ChatComponentText(title), size));
+        player.activeContainer = container;
+        player.activeContainer.addSlotListener(player);
     }
-    
+
     @Override
-    public InventoryView openMerchant(final Villager villager, final boolean force) {
-        Preconditions.checkNotNull((Object)villager, (Object)"villager cannot be null");
-        if (!force && villager.isTrading()) {
+    public InventoryView openMerchant(Villager villager, boolean force) {
+        Preconditions.checkNotNull(villager, "villager cannot be null");
+
+        return this.openMerchant((Merchant) villager, force);
+    }
+
+    @Override
+    public InventoryView openMerchant(Merchant merchant, boolean force) {
+        Preconditions.checkNotNull(merchant, "merchant cannot be null");
+
+        if (!force && merchant.isTrading()) {
             return null;
+        } else if (merchant.isTrading()) {
+            // we're not supposed to have multiple people using the same merchant, so we have to close it.
+            merchant.getTrader().closeInventory();
         }
-        if (villager.isTrading()) {
-            villager.getTrader().closeInventory();
+
+        IMerchant mcMerchant;
+        if (merchant instanceof CraftVillager) {
+            mcMerchant = ((CraftVillager) merchant).getHandle();
+        } else if (merchant instanceof CraftMerchant) {
+            mcMerchant = ((CraftMerchant) merchant).getMerchant();
+        } else {
+            throw new IllegalArgumentException("Can't open merchant " + merchant.toString());
         }
-        final EntityVillager ev = ((CraftVillager)villager).getHandle();
-        ev.setCustomer(this.getHandle());
-        this.getHandle().displayVillagerTradeGui(ev);
-        return ((CBContainer)this.getHandle().openContainer).getBukkitView();
+
+        mcMerchant.setTradingPlayer(this.getHandle());
+        this.getHandle().openTrade(mcMerchant);
+
+        return this.getHandle().activeContainer.getBukkitView();
     }
-    
-    @Override
+
     public void closeInventory() {
-        this.getHandle().closeScreen();
+        getHandle().closeInventory();
     }
-    
-    @Override
+
     public boolean isBlocking() {
-        return this.getHandle().isActiveItemStackBlocking();
+        return getHandle().isBlocking();
     }
-    
+
     @Override
-    public boolean setWindowProperty(final InventoryView.Property prop, final int value) {
+    public boolean isHandRaised() {
+        return getHandle().isHandRaised();
+    }
+
+    public boolean setWindowProperty(InventoryView.Property prop, int value) {
         return false;
     }
-    
-    @Override
+
     public int getExpToLevel() {
-        return this.getHandle().xpBarCap();
+        return getHandle().getExpToLevel();
+    }
+
+    @Override
+    public boolean hasCooldown(Material material) {
+        Preconditions.checkArgument(material != null, "material");
+
+        return getHandle().getCooldownTracker().a(CraftMagicNumbers.getItem(material));
+    }
+
+    @Override
+    public int getCooldown(Material material) {
+        Preconditions.checkArgument(material != null, "material");
+
+        ItemCooldown.Info cooldown = getHandle().getCooldownTracker().cooldowns.get(CraftMagicNumbers.getItem(material));
+        return (cooldown == null) ? 0 : Math.max(0, cooldown.endTick - getHandle().getCooldownTracker().currentTick);
+    }
+
+    @Override
+    public void setCooldown(Material material, int ticks) {
+        Preconditions.checkArgument(material != null, "material");
+        Preconditions.checkArgument(ticks >= 0, "Cannot have negative cooldown");
+
+        getHandle().getCooldownTracker().a(CraftMagicNumbers.getItem(material), ticks);
+    }
+
+    @Override
+    public org.bukkit.entity.Entity getShoulderEntityLeft() {
+        if (!getHandle().getShoulderEntityLeft().isEmpty()) {
+            Entity shoulder = EntityTypes.a(getHandle().getShoulderEntityLeft(), getHandle().world);
+
+            return (shoulder == null) ? null : shoulder.getBukkitEntity();
+        }
+
+        return null;
+    }
+
+    @Override
+    public void setShoulderEntityLeft(org.bukkit.entity.Entity entity) {
+        getHandle().setShoulderEntityLeft(entity == null ? new NBTTagCompound() : ((CraftEntity) entity).save());
+        if (entity != null) {
+            entity.remove();
+        }
+    }
+
+    @Override
+    public org.bukkit.entity.Entity getShoulderEntityRight() {
+        if (!getHandle().getShoulderEntityRight().isEmpty()) {
+            Entity shoulder = EntityTypes.a(getHandle().getShoulderEntityRight(), getHandle().world);
+
+            return (shoulder == null) ? null : shoulder.getBukkitEntity();
+        }
+
+        return null;
+    }
+
+    @Override
+    public void setShoulderEntityRight(org.bukkit.entity.Entity entity) {
+        getHandle().setShoulderEntityRight(entity == null ? new NBTTagCompound() : ((CraftEntity) entity).save());
+        if (entity != null) {
+            entity.remove();
+        }
     }
 }
