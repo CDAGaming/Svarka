@@ -564,16 +564,16 @@
          {
              for (Object tile : tileEntitiesToBeRemoved)
              {
-@@ -1846,7 +2101,7 @@
-             this.tickableTileEntities.removeAll(this.tileEntitiesToBeRemoved);
-             this.loadedTileEntityList.removeAll(this.tileEntitiesToBeRemoved);
+@@ -1849,7 +2104,7 @@
+             this.tickableTileEntities.removeAll(remove);
+             this.loadedTileEntityList.removeAll(remove);
              this.tileEntitiesToBeRemoved.clear();
 -        }
 +        }*/
  
          this.processingLoadedTiles = false;  //FML Move below remove to prevent CMEs
  
-@@ -1860,10 +2115,11 @@
+@@ -1863,10 +2118,11 @@
  
                  if (!tileentity1.isInvalid())
                  {
@@ -586,7 +586,7 @@
  
                      if (this.isBlockLoaded(tileentity1.getPos()))
                      {
-@@ -1871,13 +2127,19 @@
+@@ -1874,13 +2130,19 @@
                          IBlockState iblockstate = chunk.getBlockState(tileentity1.getPos());
                          chunk.addTileEntity(tileentity1.getPos(), tileentity1);
                          this.notifyBlockUpdate(tileentity1.getPos(), iblockstate, iblockstate, 3);
@@ -607,7 +607,7 @@
          this.theProfiler.endSection();
          this.theProfiler.endSection();
      }
-@@ -1938,9 +2200,11 @@
+@@ -1941,9 +2203,11 @@
      {
          int i = MathHelper.floor_double(entityIn.posX);
          int j = MathHelper.floor_double(entityIn.posZ);
@@ -622,7 +622,7 @@
          if (!canUpdate) canUpdate = net.minecraftforge.event.ForgeEventFactory.canEntityUpdate(entityIn);
  
          if (canUpdate)
-@@ -2380,7 +2644,7 @@
+@@ -2383,7 +2647,7 @@
      {
          return this.chunkProvider.makeString();
      }
@@ -631,7 +631,7 @@
      @Nullable
      public TileEntity getTileEntity(BlockPos pos)
      {
-@@ -2390,6 +2654,11 @@
+@@ -2393,6 +2657,11 @@
          }
          else
          {
@@ -643,7 +643,7 @@
              TileEntity tileentity = null;
  
              if (this.processingLoadedTiles)
-@@ -2434,6 +2703,14 @@
+@@ -2437,6 +2706,14 @@
          {
              if (tileEntityIn != null && !tileEntityIn.isInvalid())
              {
@@ -658,7 +658,7 @@
                  if (this.processingLoadedTiles)
                  {
                      tileEntityIn.setPos(pos);
-@@ -2656,6 +2933,13 @@
+@@ -2659,6 +2936,13 @@
                  }
  
                  this.rainingStrength = MathHelper.clamp_float(this.rainingStrength, 0.0F, 1.0F);
@@ -672,7 +672,7 @@
              }
          }
      }
-@@ -2840,8 +3124,11 @@
+@@ -2843,8 +3127,11 @@
  
      public boolean checkLightFor(EnumSkyBlock lightType, BlockPos pos)
      {
@@ -686,7 +686,7 @@
              return false;
          }
          else
-@@ -3128,11 +3415,20 @@
+@@ -3131,11 +3418,20 @@
          int i = 0;
  
          for (Entity entity : this.loadedEntityList)
@@ -711,7 +711,7 @@
          }
  
          return i;
-@@ -3142,6 +3438,11 @@
+@@ -3145,6 +3441,11 @@
      {
          for (Entity entity : entityCollection)
          {
@@ -723,7 +723,7 @@
              if (!net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.event.entity.EntityJoinWorldEvent(entity, this)))
              {
                  loadedEntityList.add(entity);
-@@ -3156,10 +3457,17 @@
+@@ -3159,10 +3460,17 @@
      }
  
      public boolean canBlockBePlaced(Block blockIn, BlockPos pos, boolean p_175716_3_, EnumFacing side, @Nullable Entity entityIn, @Nullable ItemStack itemStackIn)
@@ -745,7 +745,7 @@
      }
  
      public int getSeaLevel()
-@@ -3293,6 +3601,11 @@
+@@ -3296,6 +3604,11 @@
          for (int i = 0; i < this.playerEntities.size(); ++i)
          {
              EntityPlayer entityplayer1 = (EntityPlayer)this.playerEntities.get(i);
@@ -757,7 +757,7 @@
  
              if ((EntitySelectors.CAN_AI_TARGET.apply(entityplayer1) || !spectator) && (EntitySelectors.NOT_SPECTATING.apply(entityplayer1) || spectator))
              {
-@@ -3538,6 +3851,16 @@
+@@ -3541,6 +3854,16 @@
      public void updateAllPlayersSleepingFlag()
      {
      }
@@ -774,7 +774,7 @@
  
      public float getThunderStrength(float delta)
      {
-@@ -3936,4 +4259,9 @@
+@@ -3939,4 +4262,9 @@
      {
          return this.lootTable;
      }

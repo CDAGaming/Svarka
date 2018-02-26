@@ -1,14 +1,14 @@
 buildscript {
     repositories {
         mavenCentral()
+        jcenter()
         maven {
             name = "forge"
             url = "http://files.minecraftforge.net/maven"
         }
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.2-SNAPSHOT'//files('SForgeGradle-2.2-SNAPSHOT.jar')//'net.minecraftforge.gradle:ForgeGradle:2.2-SNAPSHOT'
-        //classpath files('FG.jar')
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.2-SNAPSHOT'
     }
 }
 
@@ -37,28 +37,24 @@ compileJava {
 repositories {
     clear()
     maven {
-        name 'sonatype'
-        url 'http://oss.sonatype.org/content/repositories/snapshots/'
+        name = 'sonatype'
+        url = 'http://oss.sonatype.org/content/repositories/snapshots/'
     }
     maven {
-        name 'prok'
-        url 'https://repo.prok.pw/'
+        name = 'forge'
+        url = 'http://files.minecraftforge.net/maven'
     }
     maven {
-        name 'forge'
-        url 'http://files.minecraftforge.net/maven'
+        name = 'minecraft'
+        url = 'https://libraries.minecraft.net/'
     }
     maven {
-        name 'minecraft'
-        url 'https://libraries.minecraft.net/'
+        name = 'spigot'
+        url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'
     }
     maven {
-        name 'spigot'
-        url 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'
-    }
-    maven {
-        name 'maven'
-        url 'https://mvnrepository.com/artifact/'
+        name = 'maven'
+        url = 'https://mvnrepository.com/artifact/'
     }
 
     mavenCentral()
@@ -170,8 +166,8 @@ launch4j {
     icon = file('icon.ico').canonicalPath
     manifest = file('l4jManifest.xml').canonicalPath
     jreMinVersion = '1.8.0'
-    initialHeapPercent = 5;
-    maxHeapPercent = 100;
+    initialHeapPercent = 5
+    maxHeapPercent = 100
 }
 tasks.generateXmlConfig.dependsOn installer
 tasks.build.dependsOn 'launch4j'
@@ -182,10 +178,10 @@ task signUniversal(type: SignJar, dependsOn: 'outputJar') {
         project.hasProperty('jarsigner')
     }
 
-    def jarsigner = [:];
+    def jarsigner = [:]
 
     if (project.hasProperty('jarsigner'))
-        jarsigner = project.jarsigner;
+        jarsigner = project.jarsigner
 
     alias = 'forge'
     exclude "paulscode/**"
@@ -237,7 +233,7 @@ genGradleProjects {
 import groovy.json.JsonSlurper;
 
 String getServerClasspath(File file) {
-    def node = new JsonSlurper().parse(file);
+    def node = new JsonSlurper().parse(file)
     def out = new StringBuilder()
     node.versionInfo.libraries.each { lib ->
         if (lib.serverreq)
@@ -251,5 +247,5 @@ String getServerClasspath(File file) {
         }
     }
     out += "minecraft_server.${minecraft.version}.jar"
-    return out.toString();
+    return out.toString()
 }
